@@ -1,0 +1,32 @@
+type User {
+  id: ID
+  firstName: String
+  lastName: String
+  email: String
+  jobTitle: String
+  createAt: String
+}
+
+input FilterInput {
+  id: ID
+  firstName: [String]
+  lastName: [String!]
+  email: [String!]
+  jobTitle: [String]
+  createAt: String
+}
+
+type Query {
+  GetUser(filter: FilterInput!): [User]
+}
+
+input CreateUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  jobTitle: String
+}
+
+type Mutation {
+  saveUser(input: CreateUserInput!): User!
+}
