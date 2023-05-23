@@ -6,31 +6,23 @@ package graph
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"go.uber.org/zap"
 	"time"
 
 	"github.com/riyadennis/sigist/graphql-service/graph/generated"
 	"github.com/riyadennis/sigist/graphql-service/graph/model"
+	"go.uber.org/zap"
 )
 
 // SaveUser is the resolver for the saveUser field.
-func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
-	stmt, err := r.db.Prepare(`INSERT INTO users (first_name, last_name, email, job_title, created_at) VALUES (?, ?, ?, ?, ?)`)
-	if err != nil {
-		r.logger.Error("failed to prepare statement", zap.Error(err))
-		return nil, err
-	}
-	defer stmt.Close()
+func (r *mutationResolver) SaveUser(_ context.Context, input model.CreateUserInput) (*model.User, error) {
 	createdAt := time.Now().Format(time.RFC3339)
-	res, err := stmt.Exec(input.FirstName, input.LastName, input.Email, input.JobTitle, createdAt)
+	res, err := saveUser(r.db, input, createdAt)
 	if err != nil {
 		r.logger.Error("failed to execute statement", zap.Error(err))
 		return nil, err
 	}
 	userID, err := res.LastInsertId()
-
 	return &model.User{
 		ID:        userID,
 		Email:     input.Email,
@@ -42,20 +34,12 @@ func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserI
 }
 
 // GetUser is the resolver for the GetUser field.
-func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) ([]*model.User, error) {
+func (r *queryResolver) GetUser(_ context.Context, filter model.FilterInput) ([]*model.User, error) {
 	var (
 		users []*model.User
-		rows  *sql.Rows
-		err   error
 	)
 
-	if filter.Email != nil {
-		rows, err = r.db.Query(`SELECT * FROM users WHERE email = ?`, filter.Email)
-	} else if filter.ID != nil {
-		rows, err = r.db.Query(`SELECT * FROM users WHERE id = ?`, *filter.ID)
-	} else {
-		rows, err = r.db.Query(`SELECT * FROM users`)
-	}
+	rows, err := getUserRows(r.db, filter)
 	if err != nil {
 		r.logger.Error("failed to execute query", zap.Error(err))
 		return nil, err
@@ -70,11 +54,12 @@ func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) (
 		}
 		users = append(users, &user)
 	}
+
 	return users, nil
 }
 
 // ID is the resolver for the id field.
-func (r *userResolver) ID(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) ID(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
@@ -86,7 +71,7 @@ func (r *userResolver) ID(ctx context.Context, obj *model.User) (*string, error)
 }
 
 // FirstName is the resolver for the firstName field.
-func (r *userResolver) FirstName(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) FirstName(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
@@ -98,7 +83,7 @@ func (r *userResolver) FirstName(ctx context.Context, obj *model.User) (*string,
 }
 
 // LastName is the resolver for the lastName field.
-func (r *userResolver) LastName(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) LastName(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
@@ -110,7 +95,7 @@ func (r *userResolver) LastName(ctx context.Context, obj *model.User) (*string, 
 }
 
 // Email is the resolver for the email field.
-func (r *userResolver) Email(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) Email(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
@@ -122,7 +107,7 @@ func (r *userResolver) Email(ctx context.Context, obj *model.User) (*string, err
 }
 
 // JobTitle is the resolver for the jobTitle field.
-func (r *userResolver) JobTitle(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) JobTitle(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
@@ -134,7 +119,7 @@ func (r *userResolver) JobTitle(ctx context.Context, obj *model.User) (*string, 
 }
 
 // CreateAt is the resolver for the createAt field.
-func (r *userResolver) CreateAt(ctx context.Context, obj *model.User) (*string, error) {
+func (r *userResolver) CreateAt(_ context.Context, obj *model.User) (*string, error) {
 	if obj == nil {
 		return nil, nil
 	}
