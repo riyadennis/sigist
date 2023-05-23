@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS users (
     last_name TEXT,
     email TEXT,
     job_title TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

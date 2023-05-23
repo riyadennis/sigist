@@ -31,7 +31,12 @@ func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserI
 	userID, err := res.LastInsertId()
 
 	return &model.User{
-		ID: userID,
+		ID:        userID,
+		Email:     input.Email,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		JobTitle:  *input.JobTitle,
+		CreateAt:  createdAt,
 	}, nil
 }
 
@@ -42,32 +47,74 @@ func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) (
 
 // ID is the resolver for the id field.
 func (r *userResolver) ID(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.ID != 0 {
+		id := fmt.Sprintf("%d", obj.ID)
+		return &id, nil
+	}
+	return nil, nil
 }
 
 // FirstName is the resolver for the firstName field.
 func (r *userResolver) FirstName(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: FirstName - firstName"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.FirstName != "" {
+		return &obj.FirstName, nil
+	}
+
+	return nil, nil
 }
 
 // LastName is the resolver for the lastName field.
 func (r *userResolver) LastName(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: LastName - lastName"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.LastName != "" {
+		return &obj.LastName, nil
+	}
+
+	return nil, nil
 }
 
 // Email is the resolver for the email field.
 func (r *userResolver) Email(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: Email - email"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.Email != "" {
+		return &obj.Email, nil
+	}
+
+	return nil, nil
 }
 
 // JobTitle is the resolver for the jobTitle field.
 func (r *userResolver) JobTitle(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: JobTitle - jobTitle"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.JobTitle != "" {
+		return &obj.JobTitle, nil
+	}
+
+	return nil, nil
 }
 
 // CreateAt is the resolver for the createAt field.
 func (r *userResolver) CreateAt(ctx context.Context, obj *model.User) (*string, error) {
-	panic(fmt.Errorf("not implemented: CreateAt - createAt"))
+	if obj == nil {
+		return nil, nil
+	}
+	if obj.CreateAt != "" {
+		return &obj.CreateAt, nil
+	}
+
+	return nil, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
