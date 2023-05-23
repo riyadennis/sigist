@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"go.uber.org/zap"
 	"time"
@@ -42,7 +43,34 @@ func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserI
 
 // GetUser is the resolver for the GetUser field.
 func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: GetUser - GetUser"))
+	var (
+		users []*model.User
+		rows  *sql.Rows
+		err   error
+	)
+
+	if filter.Email != nil {
+		rows, err = r.db.Query(`SELECT * FROM users WHERE email = ?`, filter.Email)
+	} else if filter.ID != nil {
+		rows, err = r.db.Query(`SELECT * FROM users WHERE id = ?`, *filter.ID)
+	} else {
+		rows, err = r.db.Query(`SELECT * FROM users`)
+	}
+	if err != nil {
+		r.logger.Error("failed to execute query", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.JobTitle, &user.CreateAt)
+		if err != nil {
+			r.logger.Error("failed to scan row", zap.Error(err))
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+	return users, nil
 }
 
 // ID is the resolver for the id field.

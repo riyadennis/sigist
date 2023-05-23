@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"go.uber.org/zap"
 	"net"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/riyadennis/sigist/graphql-service/graph"
 	"github.com/riyadennis/sigist/graphql-service/graph/generated"
 	"github.com/riyadennis/sigist/graphql-service/internal"
@@ -20,7 +20,6 @@ import (
 
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -66,7 +65,6 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-
 	db, err := sql.Open("sqlite3", "./users.db")
 	if err != nil {
 		logger.Error("failed to open db connection", zap.Error(err))
