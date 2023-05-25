@@ -35,9 +35,7 @@ func (r *mutationResolver) SaveUser(_ context.Context, input model.CreateUserInp
 
 // GetUser is the resolver for the GetUser field.
 func (r *queryResolver) GetUser(_ context.Context, filter model.FilterInput) ([]*model.User, error) {
-	var (
-		users []*model.User
-	)
+	var users []*model.User
 
 	rows, err := getUserRows(r.db, filter)
 	if err != nil {
@@ -54,7 +52,6 @@ func (r *queryResolver) GetUser(_ context.Context, filter model.FilterInput) ([]
 		}
 		users = append(users, &user)
 	}
-
 	return users, nil
 }
 
