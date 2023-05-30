@@ -11,12 +11,16 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/riyadennis/sigist/graphql-service/graph"
 	"github.com/riyadennis/sigist/graphql-service/graph/generated"
 	"github.com/riyadennis/sigist/graphql-service/internal"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -58,7 +62,7 @@ type Service struct {
 	DB *sql.DB
 }
 
-func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
+func NewService(conf internal.Config) (*Service, error) {
 	log, err := logger(conf.Env)
 	if err != nil {
 		return nil, err
@@ -87,7 +91,7 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
+		"file://"+conf.MigrationsPath,
 		"sqlite3", driver)
 	if err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
@@ -174,23 +178,29 @@ func (s *Service) gracefulShutdown(ctx context.Context) {
 	_ = s.Server.Shutdown(cancelCtx)
 }
 
+func newRouter(srv *handler.Server) http.Handler {
+	chiRouter := chi.NewRouter()
+
+	chiRouter.Use(middleware.RequestID)
+	chiRouter.Use(middleware.Recoverer)
+
+	chiRouter.Handle("/", otelhttp.NewHandler(
+		playground.Handler("GraphQL playground", "/graphql"),
+		"graphql"))
+
+	chiRouter.Handle("/graphql", srv)
+	return chiRouter
+}
+
 func logger(env string) (*zap.Logger, error) {
-	log := &zap.Logger{}
-	var err error
 	switch env {
 	case "prod":
-		log, err = zap.NewProduction()
-		if err != nil {
-			return nil, err
-		}
+		return zap.NewProduction()
 	case "test":
-		log = zap.NewExample()
+		return zap.NewExample(), nil
 	case "dev":
-		log, err = zap.NewDevelopment()
-		if err != nil {
-			return nil, err
-		}
+		return zap.NewDevelopment()
+	default:
+		return nil, errors.New("invalid environment")
 	}
-
-	return log, nil
 }

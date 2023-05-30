@@ -12,10 +12,11 @@ import (
 // args are parsed from go-arg, https://github.com/alexflint/go-arg
 // Add here service config arguments and add the specific arg tag
 type Config struct {
-	Env      string `arg:"env:ENVIRONMENT" validate:"required,notblank"`
-	Port     string `arg:"env:PORT" validate:"required,hostname_port"`
-	LogLevel string `arg:"env:LOG_LEVEL" validate:"required,notblank"`
-	DBFile   string `arg:"env:DB_FILE" default:"./users.db"`
+	Env            string `arg:"env:ENVIRONMENT" validate:"required,notblank"`
+	Port           string `arg:"env:PORT" validate:"required,hostname_port"`
+	LogLevel       string `arg:"env:LOG_LEVEL" validate:"required,notblank"`
+	DBFile         string `arg:"env:DB_FILE" default:"./users.db"`
+	MigrationsPath string `arg:"env:MIGRATIONS_PATH" default:"migrations"`
 }
 
 // NewConfig return a new instance of Config
