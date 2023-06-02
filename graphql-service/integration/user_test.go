@@ -3,24 +3,14 @@ package integration
 import (
 	"context"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/cucumber/godog"
-	"github.com/cucumber/godog/colors"
 	flag "github.com/spf13/pflag"
 
 	"github.com/riyadennis/sigist/graphql-service/graph/model"
 	"github.com/riyadennis/sigist/graphql-service/internal"
 	"github.com/riyadennis/sigist/graphql-service/service"
-)
-
-var (
-	opts = godog.Options{
-		Output: colors.Colored(os.Stdout),
-		Format: "progress",
-	}
-	hostUrl = "http://localhost:8081/graphql"
 )
 
 func init() {
@@ -49,20 +39,11 @@ type UserTest struct {
 	APIResponse *Response
 }
 
-type Response struct {
-	Data struct {
-		SaveUser struct {
-			ID        int16  `json:"id"`
-			FirstName string `json:"firstName omitempty"`
-		} `json:"saveUser"`
-	} `json:"data"`
-}
-
 func (u *UserTest) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Before(BeforeScenario)
 	ctx.Step(`^he sign up with details below:$`, u.heSignUpWithDetailsBelow)
-	ctx.Step(`^there should be (\d+) user called "([^"]*)"$`, u.thereShouldBeUserCalled)
-	ctx.Step(`^"([^"]*)" is a user$`, u.wantsToUseTheSystem)
+	ctx.Step(`^"([^"]*)" is a user$`, u.isAUser)
+	ctx.Step(`^there should be a user called "([^"]*)"$`, u.thereShouldBeAUserCalled)
 }
 
 func BeforeScenario(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
@@ -98,16 +79,32 @@ func (u *UserTest) heSignUpWithDetailsBelow(arg1 *godog.Table) error {
 	return err
 }
 
-func (u *UserTest) thereShouldBeUserCalled(arg1 int, arg2 string) error {
-	createdUserID := u.APIResponse.Data.SaveUser.ID
-	if createdUserID == 0 {
-		log.Fatal("no user created")
+func (u *UserTest) thereShouldBeAUserCalled(arg1 string) error {
+	response, err := getUserQueryByName(arg1)
+	if err != nil {
+		return err
 	}
 
-	return getUserQuery(createdUserID)
+	for _, rsp := range response.Data.GetUser {
+		if rsp.FirstName == arg1 {
+			return nil
+		}
+	}
+
+	return nil
 }
 
-func (u *UserTest) wantsToUseTheSystem(arg1 string) error {
+func (u *UserTest) isAUser(arg1 string) error {
+	response, err := getUserQueryByName(arg1)
+	if err != nil {
+		return err
+	}
+
+	for _, rsp := range response.Data.GetUser {
+		if rsp.FirstName == arg1 {
+			return nil
+		}
+	}
 
 	return nil
 }

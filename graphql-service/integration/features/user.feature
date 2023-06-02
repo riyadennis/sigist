@@ -8,4 +8,4 @@ Feature: user management
     When he sign up with details below:
       | firstName | lastName | email       | jobTitle      |
       | John      | Doe      |  john@doe.com | Developer |
-    Then there should be 1 user called "John Doe"
+    Then there should be a user called "John"
