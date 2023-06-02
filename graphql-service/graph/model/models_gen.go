@@ -10,10 +10,10 @@ type CreateUserInput struct {
 }
 
 type FilterInput struct {
-	ID        *string   `json:"id,omitempty"`
-	FirstName []*string `json:"firstName,omitempty"`
-	LastName  []string  `json:"lastName,omitempty"`
-	Email     []string  `json:"email,omitempty"`
-	JobTitle  []*string `json:"jobTitle,omitempty"`
-	CreateAt  *string   `json:"createAt,omitempty"`
+	ID        *string `json:"id,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+	Email     *string `json:"email,omitempty"`
+	JobTitle  *string `json:"jobTitle,omitempty"`
+	CreateAt  *string `json:"createAt,omitempty"`
 }

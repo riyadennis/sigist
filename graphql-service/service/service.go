@@ -69,7 +69,7 @@ func NewService(conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-	db, err := sql.Open("sqlite3", "./users.db")
+	db, err := sql.Open("sqlite3", conf.DBFile)
 	if err != nil {
 		logger.Error("failed to open db connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB

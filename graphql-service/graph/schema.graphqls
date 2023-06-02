@@ -9,10 +9,10 @@ type User {
 
 input FilterInput {
   id: ID
-  firstName: [String]
-  lastName: [String!]
-  email: [String!]
-  jobTitle: [String]
+  firstName: String
+  lastName: String
+  email: String
+  jobTitle: String
   createAt: String
 }
 

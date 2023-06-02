@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/riyadennis/sigist/graphql-service/graph/generated"
@@ -15,7 +14,7 @@ import (
 )
 
 // SaveUser is the resolver for the saveUser field.
-func (r *mutationResolver) SaveUser(_ context.Context, input model.CreateUserInput) (*model.User, error) {
+func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
 	createdAt := time.Now().Format(time.RFC3339)
 	res, err := saveUser(r.db, input, createdAt)
 	if err != nil {
@@ -34,7 +33,7 @@ func (r *mutationResolver) SaveUser(_ context.Context, input model.CreateUserInp
 }
 
 // GetUser is the resolver for the GetUser field.
-func (r *queryResolver) GetUser(_ context.Context, filter model.FilterInput) ([]*model.User, error) {
+func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) ([]*model.User, error) {
 	var users []*model.User
 
 	rows, err := getUserRows(r.db, filter)
@@ -55,87 +54,11 @@ func (r *queryResolver) GetUser(_ context.Context, filter model.FilterInput) ([]
 	return users, nil
 }
 
-// ID is the resolver for the id field.
-func (r *userResolver) ID(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.ID != 0 {
-		id := fmt.Sprintf("%d", obj.ID)
-		return &id, nil
-	}
-	return nil, nil
-}
-
-// FirstName is the resolver for the firstName field.
-func (r *userResolver) FirstName(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.FirstName != "" {
-		return &obj.FirstName, nil
-	}
-
-	return nil, nil
-}
-
-// LastName is the resolver for the lastName field.
-func (r *userResolver) LastName(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.LastName != "" {
-		return &obj.LastName, nil
-	}
-
-	return nil, nil
-}
-
-// Email is the resolver for the email field.
-func (r *userResolver) Email(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.Email != "" {
-		return &obj.Email, nil
-	}
-
-	return nil, nil
-}
-
-// JobTitle is the resolver for the jobTitle field.
-func (r *userResolver) JobTitle(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.JobTitle != "" {
-		return &obj.JobTitle, nil
-	}
-
-	return nil, nil
-}
-
-// CreateAt is the resolver for the createAt field.
-func (r *userResolver) CreateAt(_ context.Context, obj *model.User) (*string, error) {
-	if obj == nil {
-		return nil, nil
-	}
-	if obj.CreateAt != "" {
-		return &obj.CreateAt, nil
-	}
-
-	return nil, nil
-}
-
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// User returns generated.UserResolver implementation.
-func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type userResolver struct{ *Resolver }
