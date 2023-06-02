@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/riyadennis/sigist/graphql-service/graph"
@@ -183,6 +184,9 @@ func newRouter(srv *handler.Server) http.Handler {
 
 	chiRouter.Use(middleware.RequestID)
 	chiRouter.Use(middleware.Recoverer)
+	chiRouter.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+	}))
 
 	chiRouter.Handle("/", otelhttp.NewHandler(
 		playground.Handler("GraphQL playground", "/graphql"),
