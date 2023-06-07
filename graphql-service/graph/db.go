@@ -6,14 +6,14 @@ import (
 )
 
 var (
-	querySaveUser           = `INSERT INTO users (first_name, last_name, email, job_title, created_at) VALUES (?, ?, ?, ?, ?)`
+	querySaveUser           = `INSERT INTO users (id, first_name, last_name, email, job_title, created_at) VALUES (?, ?, ?, ?, ?, ?)`
 	queryGetUserByID        = `SELECT * FROM users WHERE id = ?`
 	queryGetUserByEmail     = `SELECT * FROM users WHERE email = ?`
 	queryGetUserByFirstName = `SELECT * FROM users WHERE first_name = ?`
 	queryGetAllUsers        = `SELECT * FROM users`
 )
 
-func saveUser(db *sql.DB, input model.CreateUserInput, createdAt string) (sql.Result, error) {
+func saveUser(db *sql.DB, input model.CreateUserInput, uuid, createdAt string) (sql.Result, error) {
 	stmt, err := db.Prepare(querySaveUser)
 	if err != nil {
 		return nil, err
@@ -21,6 +21,7 @@ func saveUser(db *sql.DB, input model.CreateUserInput, createdAt string) (sql.Re
 	defer stmt.Close()
 
 	return stmt.Exec(
+		uuid,
 		input.FirstName,
 		input.LastName,
 		input.Email,

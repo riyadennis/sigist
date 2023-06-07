@@ -3,18 +3,21 @@ module github.com/riyadennis/sigist/graphql-service
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.31
+	github.com/99designs/gqlgen v0.17.32
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/alexflint/go-arg v1.4.3
+	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/cucumber/godog v0.12.0
 	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/cors v1.2.1
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
+	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.2.0
-	github.com/vektah/gqlparser/v2 v2.5.1
+	github.com/vektah/gqlparser/v2 v2.5.2-0.20230422221642-25e09f9d292d
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.1
 	go.uber.org/zap v1.24.0
 )
@@ -26,7 +29,6 @@ require (
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
-	github.com/go-chi/cors v1.2.1 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

@@ -17,7 +17,7 @@ func main() {
 	}
 	server, err := service.NewService(config)
 	if err != nil {
-		log.Fatal("failed to initialise service", err)
+		log.Fatal("failed to initialise service ", err)
 	}
 
 	err = server.Start()

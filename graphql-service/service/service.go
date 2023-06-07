@@ -12,6 +12,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -44,6 +45,9 @@ var (
 
 	// ErrFailedTORunMigration means that the migration couldn't be run
 	ErrFailedTORunMigration = errors.New("failed to run migration")
+
+	// ErrFailedToCreateKafkaProducer means that the kafka producer couldn't be created
+	ErrFailedToCreateKafkaProducer = errors.New("failed to create kafka producer")
 )
 
 // HTTPServer encapsulates two http server operations  that we need to execute in the service
@@ -53,16 +57,17 @@ type HTTPServer interface {
 	Serve(l net.Listener) error
 }
 
+// Service encapsulates the service operations
 type Service struct {
 	Conf    internal.Config
 	Server  HTTPServer
 	Logger  *otelzap.Logger
 	Sigint  chan os.Signal
 	errChan chan error
-
-	DB *sql.DB
+	DB      *sql.DB
 }
 
+// NewService creates a new service
 func NewService(conf internal.Config) (*Service, error) {
 	log, err := logger(conf.Env)
 	if err != nil {
@@ -76,12 +81,24 @@ func NewService(conf internal.Config) (*Service, error) {
 		return nil, ErrFailedTOOpenDB
 	}
 
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": conf.KafkaBroker,
+	})
+	if err != nil {
+		logger.Error("failed to initialise kafka producer", zap.Error(err))
+		return nil, ErrFailedToCreateKafkaProducer
+	}
+
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
 			generated.Config{
 				Resolvers: graph.NewResolver(
 					logger,
 					db,
+					&graph.KafkaConfig{
+						Topic:    conf.KafkaTopic,
+						Producer: *producer,
+					},
 				),
 			}),
 	)
@@ -112,6 +129,7 @@ func NewService(conf internal.Config) (*Service, error) {
 		Addr:    conf.Port,
 		Handler: newRouter(srv),
 	}
+
 	return &Service{
 		Conf:   conf,
 		Logger: logger,

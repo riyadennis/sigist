@@ -17,6 +17,8 @@ type Config struct {
 	LogLevel       string `arg:"env:LOG_LEVEL" validate:"required,notblank"`
 	DBFile         string `arg:"env:DB_FILE" default:"./users.db"`
 	MigrationsPath string `arg:"env:MIGRATIONS_PATH" default:"migrations"`
+	KafkaBroker    string `arg:"env:KAFKA_BROKER" validate:"required,notblank"`
+	KafkaTopic     string `arg:"env:KAFKA_TOPIC" validate:"required,notblank"`
 }
 
 // NewConfig return a new instance of Config
