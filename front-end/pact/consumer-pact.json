@@ -1,0 +1,24 @@
+{
+    "consumer": {
+      "name": "MyConsumer"
+    },
+    "provider": {
+      "name": "MyService"
+    },
+    "interactions": [
+      {
+        "description": "A sample interaction",
+        "request": {
+          "method": "POST",
+          "path": "/graphql"
+        },
+        "response": {
+          "status": 200,
+          "body": {
+            "id": 1,
+            "name": "John Doe"
+          }
+        }
+      }
+    ]
+  }
