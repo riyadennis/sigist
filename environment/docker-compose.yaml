@@ -65,6 +65,33 @@ services:
       - DB_FILE=./users.db
     networks:
       datapipe:
+  rest-service:
+    container_name: rest-service
+    build:
+      context: ../rest-service
+      dockerfile: ../rest-service/Dockerfile
+    depends_on:
+      - graphql-service
+    ports:
+      - '8080:8080'
+    environment:
+      - LOG_LEVEL=debug
+      - PORT=:8080
+      - ENVIRONMENT=dev
+    networks:
+      datapipe:
+  benthos:
+    container_name: benthos
+    image: jeffail/benthos:4.7.0
+    command:
+       - -c
+       - config.yaml
+    depends_on:
+      - rest-service
+    volumes:
+      - "./benthos/config.yaml:/config.yaml"
+    networks:
+      datapipe:
 volumes:
   data-kafka:
   data-zookeeper:

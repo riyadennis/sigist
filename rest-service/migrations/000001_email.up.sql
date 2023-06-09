@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS emails (
+    id TEXT NOT NULL PRIMARY KEY,
+    sourceName TEXT,
+    email TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
