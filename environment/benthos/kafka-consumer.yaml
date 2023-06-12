@@ -35,8 +35,9 @@ pipeline:
                   meta error_message = error() # Put the error message into meta
         result_map: |
           body = this
-          meta = meta() # Propagate any new meta from within this branch block to the next block
+          meta = meta()
     - switch:
+        # For any error, both client and server, we want to log it and send it to the DLQ
         - check: meta("http_status_code").number(500) >= 400 || meta("error_message") != null
           processors:
             - log:
