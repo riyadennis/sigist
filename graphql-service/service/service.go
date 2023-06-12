@@ -97,7 +97,7 @@ func NewService(conf internal.Config) (*Service, error) {
 					db,
 					&graph.KafkaConfig{
 						Topic:    conf.KafkaTopic,
-						Producer: *producer,
+						Producer: producer,
 					},
 				),
 			}),

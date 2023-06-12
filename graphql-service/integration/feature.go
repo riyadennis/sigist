@@ -24,26 +24,27 @@ var (
 
 type Response struct {
 	Data struct {
-		SaveUser struct {
-			ID        int16  `json:"id"`
+		SaveUserFeedback struct {
+			ID        string `json:"id"`
 			FirstName string `json:"firstName omitempty"`
-		} `json:"saveUser"`
+		} `json:"SaveUserFeedback"`
 	} `json:"data"`
 }
 
 type GetUserResponse struct {
 	Data struct {
-		GetUser []struct {
+		GetUserFeedback []struct {
 			ID        int    `json:"id"`
 			FirstName string `json:"firstName"`
 			LastName  string `json:"lastName"`
 			Email     string `json:"email"`
-		} `json:"GetUser"`
+			Feedback  string `json:"feedback"`
+		} `json:"GetUserFeedback"`
 	} `json:"data"`
 }
 
-func saveUserMutation(user *model.User) (*Response, error) {
-	mutation := `{"query":"mutation {\n\tsaveUser(input: {\n\t\tfirstName: \"` + user.FirstName + `\"\n\t\tlastName: \"` + user.LastName + `\"\n\t\temail: \"` + user.Email + `\"\n\t\tjobTitle: \"` + user.JobTitle + `\"\n\t}\n\t){\n\t\tid\n\t}\n}"}`
+func saveUserFeedbackMutation(user *model.User) (*Response, error) {
+	mutation := `{"query":"mutation {\n\tSaveUserFeedback(input: {\n\t\tfirstName: \"` + user.FirstName + `\"\n\t\tlastName: \"` + user.LastName + `\"\n\t\temail: \"` + user.Email + `'\"\n\t\tjobTitle: \"` + user.JobTitle + `\"\n\t\tfeedback: \"` + user.Feedback + `\"\n\t}\n\t){\n\t\tid\n\t}\n}"}`
 	resp, err := http.Post(hostUrl, "application/json", strings.NewReader(mutation))
 	if err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func saveUserMutation(user *model.User) (*Response, error) {
 }
 
 func getUserQueryByName(firstName string) (*GetUserResponse, error) {
-	body := fmt.Sprintf(`{"query":"\n{\n\tGetUser(filter: {\n\t\tfirstName: \"%s\"\n\t}){\n\t\tid\n\t\tfirstName\n\t\tlastName\n\t\temail\n\t}\n}","variables":{}}}`, firstName)
+	body := fmt.Sprintf(`{"query":"\n{\n\tGetUserFeedback(filter: {\n\t\tfirstName: \"` + firstName + `\"\n\t}){\n\t\tfirstName\n\t\tfeedback\n\t}\n}","variables":{}}`)
 	resp, err := http.Post(hostUrl, "application/json", strings.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -87,17 +88,4 @@ func getUserQueryByName(firstName string) (*GetUserResponse, error) {
 	}
 
 	return response, nil
-}
-
-func getUserQueryWithID(id int64) error {
-	body := fmt.Sprintf(`{"query":"\n{\n\tGetUser(filter: {\n\t\tid: %d\n\t}){\n\t\tid\n\t\tfirstName\n\t\tlastName\n\t\temail\n\t}\n}","variables":{}}`, id)
-	resp, err := http.Post(hostUrl, "application/json", strings.NewReader(body))
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("failed to get user")
-	}
-
-	return nil
 }

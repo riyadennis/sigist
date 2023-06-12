@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"testing"
 	"time"
 
@@ -24,54 +25,72 @@ type mockDB struct {
 	mock sqlmock.Sqlmock
 }
 
+type mockProducer struct {
+}
+
+func (m *mockProducer) Produce(_ *kafka.Message, _ chan kafka.Event) error {
+	return nil
+}
+
 func TestMutationResolverSaveUser(t *testing.T) {
 	scenarios := []struct {
 		name        string
-		in          *model.CreateUserInput
-		out         *model.User
+		in          *model.UserFeedbackInput
+		out         *model.UserFeedback
 		mockDB      *mockDB
 		expectedErr error
 	}{
 		{
 			name: "db prepare error",
-			in: &model.CreateUserInput{
+			in: &model.UserFeedbackInput{
 				FirstName: "John",
 				LastName:  "Doe",
 				Email:     "john@doe.com",
+				Feedback:  "This is a feedback",
 			},
 			mockDB:      mockUserSavePrepareError(t),
 			expectedErr: errFailedDBOperation,
 		},
 		{
 			name: "db exec error",
-			in: &model.CreateUserInput{
+			in: &model.UserFeedbackInput{
 				FirstName: "John",
 				LastName:  "Doe",
 				Email:     "john@doe.com",
+				Feedback:  "This is a feedback",
 			},
 			mockDB:      mockUserSaveStatementError(t),
 			expectedErr: errFailedDBOperation,
 		},
 		{
 			name: "db exec success",
-			in: func() *model.CreateUserInput {
+			in: func() *model.UserFeedbackInput {
 				jobTitle := "Quality Engineer"
-				return &model.CreateUserInput{
+				return &model.UserFeedbackInput{
 					FirstName: "John",
 					LastName:  "Doe",
 					Email:     "john@doe.com",
+					Feedback:  "This is a feedback",
 					JobTitle:  &jobTitle,
 				}
 			}(),
 			mockDB: mockUserSaveStatementSuccess(t),
-			out: func() *model.User {
-				return &model.User{
-					ID:        1,
-					FirstName: "John",
-					LastName:  "Doe",
-					Email:     "john@doe.com",
-					JobTitle:  "Quality Engineer",
-					CreateAt:  time.Now().Format(time.RFC3339),
+			out: func() *model.UserFeedback {
+				ID := "123"
+				firstName := "John"
+				lastName := "Doe"
+				email := "john@doe.com"
+				jobTitle := "Quality Engineer"
+				feedback := "This is a feedback"
+				createAt := time.Now().Format(time.RFC3339)
+				return &model.UserFeedback{
+					ID:        &ID,
+					FirstName: &firstName,
+					LastName:  &lastName,
+					Email:     &email,
+					JobTitle:  &jobTitle,
+					Feedback:  &feedback,
+					CreateAt:  &createAt,
 				}
 			}(),
 		},
@@ -83,11 +102,18 @@ func TestMutationResolverSaveUser(t *testing.T) {
 				Resolver: &Resolver{
 					logger: logger,
 					db:     scenario.mockDB.db,
+					KafkaConfig: &KafkaConfig{
+						Topic:    "test",
+						Producer: &mockProducer{},
+					},
 				},
 			}
-			user, err := resolver.SaveUser(context.Background(), *scenario.in)
+			user, err := resolver.SaveUserFeedback(context.Background(), *scenario.in)
 			assert.Equal(t, scenario.expectedErr, err)
-			assert.Equal(t, scenario.out, user)
+			if user != nil {
+				assert.Equal(t, *scenario.out.Feedback, *user.Feedback)
+				assert.Equal(t, *scenario.out.CreateAt, *user.CreateAt)
+			}
 			err = scenario.mockDB.mock.ExpectationsWereMet()
 			assert.NoError(t, err)
 
@@ -161,7 +187,7 @@ func TestQueryResolverGetUser(t *testing.T) {
 			out: func() []*model.User {
 				return []*model.User{
 					{
-						ID:        1,
+						ID:        "1",
 						FirstName: "John",
 						LastName:  "Doe",
 						Email:     "john.doe@gmail.com",
@@ -181,7 +207,7 @@ func TestQueryResolverGetUser(t *testing.T) {
 					db:     scenario.mockDB.db,
 				},
 			}
-			users, err := resolver.GetUser(context.Background(), *scenario.in)
+			users, err := resolver.GetUserFeedback(context.Background(), *scenario.in)
 			if err != nil {
 				assert.Equal(t, scenario.expectedErr.Error(), err.Error())
 			}

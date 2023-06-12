@@ -39,7 +39,6 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
-	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -47,17 +46,18 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		SaveUser func(childComplexity int, input model.CreateUserInput) int
+		SaveUserFeedback func(childComplexity int, input model.UserFeedbackInput) int
 	}
 
 	Query struct {
-		GetUser            func(childComplexity int, filter model.FilterInput) int
+		GetUserFeedback    func(childComplexity int, filter model.FilterInput) int
 		__resolve__service func(childComplexity int) int
 	}
 
-	User struct {
+	UserFeedback struct {
 		CreateAt  func(childComplexity int) int
 		Email     func(childComplexity int) int
+		Feedback  func(childComplexity int) int
 		FirstName func(childComplexity int) int
 		ID        func(childComplexity int) int
 		JobTitle  func(childComplexity int) int
@@ -70,13 +70,10 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	SaveUser(ctx context.Context, input model.CreateUserInput) (*model.User, error)
+	SaveUserFeedback(ctx context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error)
 }
 type QueryResolver interface {
-	GetUser(ctx context.Context, filter model.FilterInput) ([]*model.User, error)
-}
-type UserResolver interface {
-	ID(ctx context.Context, obj *model.User) (*string, error)
+	GetUserFeedback(ctx context.Context, filter model.FilterInput) ([]*model.UserFeedback, error)
 }
 
 type executableSchema struct {
@@ -94,29 +91,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.saveUser":
-		if e.complexity.Mutation.SaveUser == nil {
+	case "Mutation.SaveUserFeedback":
+		if e.complexity.Mutation.SaveUserFeedback == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_saveUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_SaveUserFeedback_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SaveUser(childComplexity, args["input"].(model.CreateUserInput)), true
+		return e.complexity.Mutation.SaveUserFeedback(childComplexity, args["input"].(model.UserFeedbackInput)), true
 
-	case "Query.GetUser":
-		if e.complexity.Query.GetUser == nil {
+	case "Query.GetUserFeedback":
+		if e.complexity.Query.GetUserFeedback == nil {
 			break
 		}
 
-		args, err := ec.field_Query_GetUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_GetUserFeedback_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetUser(childComplexity, args["filter"].(model.FilterInput)), true
+		return e.complexity.Query.GetUserFeedback(childComplexity, args["filter"].(model.FilterInput)), true
 
 	case "Query._service":
 		if e.complexity.Query.__resolve__service == nil {
@@ -125,47 +122,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.__resolve__service(childComplexity), true
 
-	case "User.createAt":
-		if e.complexity.User.CreateAt == nil {
+	case "UserFeedback.createAt":
+		if e.complexity.UserFeedback.CreateAt == nil {
 			break
 		}
 
-		return e.complexity.User.CreateAt(childComplexity), true
+		return e.complexity.UserFeedback.CreateAt(childComplexity), true
 
-	case "User.email":
-		if e.complexity.User.Email == nil {
+	case "UserFeedback.email":
+		if e.complexity.UserFeedback.Email == nil {
 			break
 		}
 
-		return e.complexity.User.Email(childComplexity), true
+		return e.complexity.UserFeedback.Email(childComplexity), true
 
-	case "User.firstName":
-		if e.complexity.User.FirstName == nil {
+	case "UserFeedback.feedback":
+		if e.complexity.UserFeedback.Feedback == nil {
 			break
 		}
 
-		return e.complexity.User.FirstName(childComplexity), true
+		return e.complexity.UserFeedback.Feedback(childComplexity), true
 
-	case "User.id":
-		if e.complexity.User.ID == nil {
+	case "UserFeedback.firstName":
+		if e.complexity.UserFeedback.FirstName == nil {
 			break
 		}
 
-		return e.complexity.User.ID(childComplexity), true
+		return e.complexity.UserFeedback.FirstName(childComplexity), true
 
-	case "User.jobTitle":
-		if e.complexity.User.JobTitle == nil {
+	case "UserFeedback.id":
+		if e.complexity.UserFeedback.ID == nil {
 			break
 		}
 
-		return e.complexity.User.JobTitle(childComplexity), true
+		return e.complexity.UserFeedback.ID(childComplexity), true
 
-	case "User.lastName":
-		if e.complexity.User.LastName == nil {
+	case "UserFeedback.jobTitle":
+		if e.complexity.UserFeedback.JobTitle == nil {
 			break
 		}
 
-		return e.complexity.User.LastName(childComplexity), true
+		return e.complexity.UserFeedback.JobTitle(childComplexity), true
+
+	case "UserFeedback.lastName":
+		if e.complexity.UserFeedback.LastName == nil {
+			break
+		}
+
+		return e.complexity.UserFeedback.LastName(childComplexity), true
 
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
@@ -182,8 +186,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
-		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputFilterInput,
+		ec.unmarshalInputUserFeedbackInput,
 	)
 	first := true
 
@@ -281,12 +285,13 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../schema.graphqls", Input: `type User {
+	{Name: "../schema.graphqls", Input: `type UserFeedback {
   id: String
   firstName: String
   lastName: String
   email: String
   jobTitle: String
+  feedback: String
   createAt: String
 }
 
@@ -300,18 +305,19 @@ input FilterInput {
 }
 
 type Query {
-  GetUser(filter: FilterInput!): [User]
+  GetUserFeedback(filter: FilterInput!): [UserFeedback]
 }
 
-input CreateUserInput {
+input UserFeedbackInput {
   firstName: String!
   lastName: String!
   email: String!
   jobTitle: String
+  feedback: String!
 }
 
 type Mutation {
-  saveUser(input: CreateUserInput!): User!
+  SaveUserFeedback(input: UserFeedbackInput!): UserFeedback!
 }
 `, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
@@ -339,13 +345,13 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_saveUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_SaveUserFeedback_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.CreateUserInput
+	var arg0 model.UserFeedbackInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateUserInput2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐCreateUserInput(ctx, tmp)
+		arg0, err = ec.unmarshalNUserFeedbackInput2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedbackInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -354,7 +360,7 @@ func (ec *executionContext) field_Mutation_saveUser_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_GetUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_GetUserFeedback_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 model.FilterInput
@@ -422,8 +428,8 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Mutation_saveUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_saveUser(ctx, field)
+func (ec *executionContext) _Mutation_SaveUserFeedback(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_SaveUserFeedback(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -436,7 +442,7 @@ func (ec *executionContext) _Mutation_saveUser(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SaveUser(rctx, fc.Args["input"].(model.CreateUserInput))
+		return ec.resolvers.Mutation().SaveUserFeedback(rctx, fc.Args["input"].(model.UserFeedbackInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -448,12 +454,12 @@ func (ec *executionContext) _Mutation_saveUser(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*model.UserFeedback)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUserFeedback2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_saveUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_SaveUserFeedback(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -462,19 +468,21 @@ func (ec *executionContext) fieldContext_Mutation_saveUser(ctx context.Context, 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_User_id(ctx, field)
+				return ec.fieldContext_UserFeedback_id(ctx, field)
 			case "firstName":
-				return ec.fieldContext_User_firstName(ctx, field)
+				return ec.fieldContext_UserFeedback_firstName(ctx, field)
 			case "lastName":
-				return ec.fieldContext_User_lastName(ctx, field)
+				return ec.fieldContext_UserFeedback_lastName(ctx, field)
 			case "email":
-				return ec.fieldContext_User_email(ctx, field)
+				return ec.fieldContext_UserFeedback_email(ctx, field)
 			case "jobTitle":
-				return ec.fieldContext_User_jobTitle(ctx, field)
+				return ec.fieldContext_UserFeedback_jobTitle(ctx, field)
+			case "feedback":
+				return ec.fieldContext_UserFeedback_feedback(ctx, field)
 			case "createAt":
-				return ec.fieldContext_User_createAt(ctx, field)
+				return ec.fieldContext_UserFeedback_createAt(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserFeedback", field.Name)
 		},
 	}
 	defer func() {
@@ -484,15 +492,15 @@ func (ec *executionContext) fieldContext_Mutation_saveUser(ctx context.Context, 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_saveUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_SaveUserFeedback_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_GetUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_GetUser(ctx, field)
+func (ec *executionContext) _Query_GetUserFeedback(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_GetUserFeedback(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -505,7 +513,7 @@ func (ec *executionContext) _Query_GetUser(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetUser(rctx, fc.Args["filter"].(model.FilterInput))
+		return ec.resolvers.Query().GetUserFeedback(rctx, fc.Args["filter"].(model.FilterInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -514,12 +522,12 @@ func (ec *executionContext) _Query_GetUser(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.([]*model.UserFeedback)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUserFeedback2ᚕᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_GetUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetUserFeedback(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -528,19 +536,21 @@ func (ec *executionContext) fieldContext_Query_GetUser(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_User_id(ctx, field)
+				return ec.fieldContext_UserFeedback_id(ctx, field)
 			case "firstName":
-				return ec.fieldContext_User_firstName(ctx, field)
+				return ec.fieldContext_UserFeedback_firstName(ctx, field)
 			case "lastName":
-				return ec.fieldContext_User_lastName(ctx, field)
+				return ec.fieldContext_UserFeedback_lastName(ctx, field)
 			case "email":
-				return ec.fieldContext_User_email(ctx, field)
+				return ec.fieldContext_UserFeedback_email(ctx, field)
 			case "jobTitle":
-				return ec.fieldContext_User_jobTitle(ctx, field)
+				return ec.fieldContext_UserFeedback_jobTitle(ctx, field)
+			case "feedback":
+				return ec.fieldContext_UserFeedback_feedback(ctx, field)
 			case "createAt":
-				return ec.fieldContext_User_createAt(ctx, field)
+				return ec.fieldContext_UserFeedback_createAt(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserFeedback", field.Name)
 		},
 	}
 	defer func() {
@@ -550,7 +560,7 @@ func (ec *executionContext) fieldContext_Query_GetUser(ctx context.Context, fiel
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_GetUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_GetUserFeedback_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -734,8 +744,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_id(ctx, field)
+func (ec *executionContext) _UserFeedback_id(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -748,7 +758,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().ID(rctx, obj)
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -762,12 +772,12 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -775,8 +785,8 @@ func (ec *executionContext) fieldContext_User_id(ctx context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _User_firstName(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_firstName(ctx, field)
+func (ec *executionContext) _UserFeedback_firstName(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_firstName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -798,14 +808,14 @@ func (ec *executionContext) _User_firstName(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_firstName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_firstName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -816,8 +826,8 @@ func (ec *executionContext) fieldContext_User_firstName(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _User_lastName(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_lastName(ctx, field)
+func (ec *executionContext) _UserFeedback_lastName(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_lastName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -839,14 +849,14 @@ func (ec *executionContext) _User_lastName(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_lastName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_lastName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -857,8 +867,8 @@ func (ec *executionContext) fieldContext_User_lastName(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_email(ctx, field)
+func (ec *executionContext) _UserFeedback_email(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_email(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -880,14 +890,14 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -898,8 +908,8 @@ func (ec *executionContext) fieldContext_User_email(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _User_jobTitle(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_jobTitle(ctx, field)
+func (ec *executionContext) _UserFeedback_jobTitle(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_jobTitle(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -921,14 +931,14 @@ func (ec *executionContext) _User_jobTitle(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_jobTitle(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_jobTitle(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -939,8 +949,49 @@ func (ec *executionContext) fieldContext_User_jobTitle(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _User_createAt(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_createAt(ctx, field)
+func (ec *executionContext) _UserFeedback_feedback(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_feedback(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Feedback, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserFeedback_feedback(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserFeedback",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserFeedback_createAt(ctx context.Context, field graphql.CollectedField, obj *model.UserFeedback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserFeedback_createAt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -962,14 +1013,14 @@ func (ec *executionContext) _User_createAt(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_createAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_UserFeedback_createAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "User",
+		Object:     "UserFeedback",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2794,62 +2845,6 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj interface{}) (model.CreateUserInput, error) {
-	var it model.CreateUserInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"firstName", "lastName", "email", "jobTitle"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "firstName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.FirstName = data
-		case "lastName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LastName = data
-		case "email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Email = data
-		case "jobTitle":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobTitle"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.JobTitle = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputFilterInput(ctx context.Context, obj interface{}) (model.FilterInput, error) {
 	var it model.FilterInput
 	asMap := map[string]interface{}{}
@@ -2924,6 +2919,71 @@ func (ec *executionContext) unmarshalInputFilterInput(ctx context.Context, obj i
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserFeedbackInput(ctx context.Context, obj interface{}) (model.UserFeedbackInput, error) {
+	var it model.UserFeedbackInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"firstName", "lastName", "email", "jobTitle", "feedback"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "firstName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FirstName = data
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastName = data
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "jobTitle":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jobTitle"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.JobTitle = data
+		case "feedback":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feedback"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Feedback = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2951,9 +3011,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "saveUser":
+		case "SaveUserFeedback":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_saveUser(ctx, field)
+				return ec._Mutation_SaveUserFeedback(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -3000,7 +3060,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "GetUser":
+		case "GetUserFeedback":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3009,7 +3069,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_GetUser(ctx, field)
+				res = ec._Query_GetUserFeedback(ctx, field)
 				return res
 			}
 
@@ -3072,60 +3132,31 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var userImplementors = []string{"User"}
+var userFeedbackImplementors = []string{"UserFeedback"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
+func (ec *executionContext) _UserFeedback(ctx context.Context, sel ast.SelectionSet, obj *model.UserFeedback) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userFeedbackImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("User")
+			out.Values[i] = graphql.MarshalString("UserFeedback")
 		case "id":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._User_id(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._UserFeedback_id(ctx, field, obj)
 		case "firstName":
-			out.Values[i] = ec._User_firstName(ctx, field, obj)
+			out.Values[i] = ec._UserFeedback_firstName(ctx, field, obj)
 		case "lastName":
-			out.Values[i] = ec._User_lastName(ctx, field, obj)
+			out.Values[i] = ec._UserFeedback_lastName(ctx, field, obj)
 		case "email":
-			out.Values[i] = ec._User_email(ctx, field, obj)
+			out.Values[i] = ec._UserFeedback_email(ctx, field, obj)
 		case "jobTitle":
-			out.Values[i] = ec._User_jobTitle(ctx, field, obj)
+			out.Values[i] = ec._UserFeedback_jobTitle(ctx, field, obj)
+		case "feedback":
+			out.Values[i] = ec._UserFeedback_feedback(ctx, field, obj)
 		case "createAt":
-			out.Values[i] = ec._User_createAt(ctx, field, obj)
+			out.Values[i] = ec._UserFeedback_createAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3526,11 +3557,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCreateUserInput2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v interface{}) (model.CreateUserInput, error) {
-	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNFilterInput2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐFilterInput(ctx context.Context, v interface{}) (model.FilterInput, error) {
 	res, err := ec.unmarshalInputFilterInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3551,18 +3577,23 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNUser2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
+func (ec *executionContext) marshalNUserFeedback2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx context.Context, sel ast.SelectionSet, v model.UserFeedback) graphql.Marshaler {
+	return ec._UserFeedback(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUserFeedback2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx context.Context, sel ast.SelectionSet, v *model.UserFeedback) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._User(ctx, sel, v)
+	return ec._UserFeedback(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUserFeedbackInput2githubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedbackInput(ctx context.Context, v interface{}) (model.UserFeedbackInput, error) {
+	res, err := ec.unmarshalInputUserFeedbackInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalN_FieldSet2string(ctx context.Context, v interface{}) (string, error) {
@@ -3889,7 +3920,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUserFeedback2ᚕᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx context.Context, sel ast.SelectionSet, v []*model.UserFeedback) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3916,7 +3947,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋriyadennisᚋsigis
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalOUserFeedback2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3930,11 +3961,11 @@ func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋriyadennisᚋsigis
 	return ret
 }
 
-func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUserFeedback2ᚖgithubᚗcomᚋriyadennisᚋsigistᚋgraphqlᚑserviceᚋgraphᚋmodelᚐUserFeedback(ctx context.Context, sel ast.SelectionSet, v *model.UserFeedback) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._User(ctx, sel, v)
+	return ec._UserFeedback(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

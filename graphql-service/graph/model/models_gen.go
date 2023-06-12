@@ -2,13 +2,6 @@
 
 package model
 
-type CreateUserInput struct {
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	Email     string  `json:"email"`
-	JobTitle  *string `json:"jobTitle,omitempty"`
-}
-
 type FilterInput struct {
 	ID        *string `json:"id,omitempty"`
 	FirstName *string `json:"firstName,omitempty"`
@@ -16,4 +9,22 @@ type FilterInput struct {
 	Email     *string `json:"email,omitempty"`
 	JobTitle  *string `json:"jobTitle,omitempty"`
 	CreateAt  *string `json:"createAt,omitempty"`
+}
+
+type UserFeedback struct {
+	ID        *string `json:"id,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+	Email     *string `json:"email,omitempty"`
+	JobTitle  *string `json:"jobTitle,omitempty"`
+	Feedback  *string `json:"feedback,omitempty"`
+	CreateAt  *string `json:"createAt,omitempty"`
+}
+
+type UserFeedbackInput struct {
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Email     string  `json:"email"`
+	JobTitle  *string `json:"jobTitle,omitempty"`
+	Feedback  string  `json:"feedback"`
 }

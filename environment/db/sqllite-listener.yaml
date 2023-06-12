@@ -1,0 +1,81 @@
+http:
+  enabled: true
+  address: 0.0.0.0:4195
+  root_path: /benthos
+  debug_endpoints: false
+  cert_file: ""
+  key_file: ""
+  cors:
+    enabled: false
+    allowed_origins: []
+input:
+  label: "sqlite_input"
+  sql_select:
+    driver: sqlite
+    dsn: "file:../db/user-feedback.sqlite"
+    table: user_feedback
+    columns: [ '*' ]
+    where: created_at >= ?
+    args_mapping: |
+        root = [
+          now().ts_unix() - 3600
+        ]
+buffer:
+  none: {}
+pipeline:
+  threads: 1
+  processors:
+    - branch:
+        processors:
+          - label: rest_api
+            http:
+              url: "http://rest-service:8080/email"
+              verb: POST
+              headers:
+                Content-Type: application/json
+                # Forward traceparent headers to the HTTP endpoint
+                traceparent: ${! tracing_span().traceparent }
+              timeout: 3900s
+          - catch:
+              - bloblang: |
+                  meta error_message = error() # Put the error message into meta
+        result_map: |
+          body = this
+          meta = meta() # Propagate any new meta from within this branch block to the next block
+    - switch:
+        - check: meta("http_status_code").number(500) >= 400 || meta("error_message") != null
+          processors:
+            - log:
+                level: ERROR
+                message: "failed to process data"
+          fallthrough: false
+
+output:
+  label: ""
+  stdout:
+    codec: lines
+logger:
+  level: INFO
+  format: logfmt
+  add_timestamp: false
+  static_fields:
+    '@service': benthos
+  file:
+    path: ""
+    rotate: false
+    rotate_max_age_days: 0
+metrics:
+  prometheus:
+    use_histogram_timing: false
+    histogram_buckets: []
+    add_process_metrics: false
+    add_go_metrics: false
+    push_url: ""
+    push_interval: ""
+    push_job_name: benthos_push
+    push_basic_auth:
+      username: ""
+      password: ""
+    file_output_path: ""
+  mapping: ""
+

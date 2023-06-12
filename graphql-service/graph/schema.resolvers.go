@@ -16,19 +16,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// SaveUser is the resolver for the saveUser field.
-func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
+// SaveUserFeedback is the resolver for the SaveUserFeedback field.
+func (r *mutationResolver) SaveUserFeedback(ctx context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error) {
 	createdAt := time.Now().Format(time.RFC3339)
-	userID := uuid.New().String()
+	id := uuid.New().String()
 
-	res, err := saveUser(r.db, input, userID, createdAt)
+	res, err := saveUserFeedback(r.db, input, id, createdAt)
 	if err != nil {
 		r.logger.Error("failed to execute statement", zap.Error(err))
 		return nil, err
 	}
 	rows, err := res.RowsAffected()
 	if err != nil {
-		r.logger.Error("failed to fetch result from db after saving user", zap.Error(err))
+		r.logger.Error("failed to fetch result from db after saving feedback", zap.Error(err))
 		return nil, err
 	}
 
@@ -36,33 +36,34 @@ func (r *mutationResolver) SaveUser(ctx context.Context, input model.CreateUserI
 		return nil, ErrorFailedToSaveUser
 	}
 
-	user := &model.User{
-		ID:        userID,
-		Email:     input.Email,
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		JobTitle:  *input.JobTitle,
-		CreateAt:  createdAt,
+	feedback := &model.UserFeedback{
+		ID:        &id,
+		Email:     &input.Email,
+		FirstName: &input.FirstName,
+		LastName:  &input.LastName,
+		JobTitle:  input.JobTitle,
+		Feedback:  &input.Feedback,
+		CreateAt:  &createdAt,
 	}
 
-	kafkaData, err := json.Marshal(user)
+	kafkaData, err := json.Marshal(feedback)
 	if err != nil {
-		r.logger.Error("failed to marshal user", zap.Error(err))
+		r.logger.Error("failed to marshal feedback", zap.Error(err))
 		return nil, err
 	}
 	message := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &r.KafkaConfig.Topic, Partition: kafka.PartitionAny},
 		Value:          kafkaData,
-		Headers:        []kafka.Header{{Key: userID, Value: []byte("header values are binary")}},
+		Headers:        []kafka.Header{{Key: id, Value: []byte("header values are binary")}},
 	}
 
 	r.KafkaConfig.Producer.Produce(message, nil)
-	return user, nil
+	return feedback, nil
 }
 
-// GetUser is the resolver for the GetUser field.
-func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) ([]*model.User, error) {
-	var users []*model.User
+// GetUserFeedback is the resolver for the GetUserFeedback field.
+func (r *queryResolver) GetUserFeedback(ctx context.Context, filter model.FilterInput) ([]*model.UserFeedback, error) {
+	var userFeedbacks []*model.UserFeedback
 
 	rows, err := getUserRows(r.db, filter)
 	if err != nil {
@@ -71,20 +72,20 @@ func (r *queryResolver) GetUser(ctx context.Context, filter model.FilterInput) (
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var user model.User
-		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.JobTitle, &user.CreateAt)
+		user := model.UserFeedback{}
+		err := rows.Scan(
+			&user.ID, &user.FirstName,
+			&user.LastName, &user.Email,
+			&user.JobTitle, &user.Feedback,
+			&user.CreateAt,
+		)
 		if err != nil {
 			r.logger.Error("failed to scan row", zap.Error(err))
 			return nil, err
 		}
-		users = append(users, &user)
+		userFeedbacks = append(userFeedbacks, &user)
 	}
-	return users, nil
-}
-
-// ID is the resolver for the id field.
-func (r *userResolver) ID(ctx context.Context, obj *model.User) (*string, error) {
-	return &obj.ID, nil
+	return userFeedbacks, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -93,9 +94,11 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// User returns generated.UserResolver implementation.
-func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+func (r *userResolver) ID(ctx context.Context, obj *model.User) (*string, error) {
+	return &obj.ID, nil
+}
+
 type userResolver struct{ *Resolver }

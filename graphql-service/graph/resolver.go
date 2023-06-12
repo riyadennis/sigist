@@ -19,7 +19,11 @@ var (
 // KafkaConfig encapsulates the kafka producer and the topic name
 type KafkaConfig struct {
 	Topic    string
-	Producer kafka.Producer
+	Producer Producer
+}
+
+type Producer interface {
+	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
 }
 
 // Resolver encapsulates the dependencies for the resolver

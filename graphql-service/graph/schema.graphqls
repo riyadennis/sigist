@@ -1,9 +1,10 @@
-type User {
+type UserFeedback {
   id: String
   firstName: String
   lastName: String
   email: String
   jobTitle: String
+  feedback: String
   createAt: String
 }
 
@@ -17,16 +18,17 @@ input FilterInput {
 }
 
 type Query {
-  GetUser(filter: FilterInput!): [User]
+  GetUserFeedback(filter: FilterInput!): [UserFeedback]
 }
 
-input CreateUserInput {
+input UserFeedbackInput {
   firstName: String!
   lastName: String!
   email: String!
   jobTitle: String
+  feedback: String!
 }
 
 type Mutation {
-  saveUser(input: CreateUserInput!): User!
+  SaveUserFeedback(input: UserFeedbackInput!): UserFeedback!
 }

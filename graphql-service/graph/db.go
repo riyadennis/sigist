@@ -6,14 +6,14 @@ import (
 )
 
 var (
-	querySaveUser           = `INSERT INTO users (id, first_name, last_name, email, job_title, created_at) VALUES (?, ?, ?, ?, ?, ?)`
-	queryGetUserByID        = `SELECT * FROM users WHERE id = ?`
-	queryGetUserByEmail     = `SELECT * FROM users WHERE email = ?`
-	queryGetUserByFirstName = `SELECT * FROM users WHERE first_name = ?`
-	queryGetAllUsers        = `SELECT * FROM users`
+	querySaveUser           = `INSERT INTO user_feedback (id, first_name, last_name, email, job_title, feedback,created_at) VALUES (?, ?, ?, ?, ?, ?,?)`
+	queryGetUserByID        = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE id = ?`
+	queryGetUserByEmail     = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE email = ?`
+	queryGetUserByFirstName = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE first_name = ?`
+	queryGetAllUsers        = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback`
 )
 
-func saveUser(db *sql.DB, input model.CreateUserInput, uuid, createdAt string) (sql.Result, error) {
+func saveUserFeedback(db *sql.DB, input model.UserFeedbackInput, uuid, createdAt string) (sql.Result, error) {
 	stmt, err := db.Prepare(querySaveUser)
 	if err != nil {
 		return nil, err
@@ -26,6 +26,7 @@ func saveUser(db *sql.DB, input model.CreateUserInput, uuid, createdAt string) (
 		input.LastName,
 		input.Email,
 		input.JobTitle,
+		input.Feedback,
 		createdAt,
 	)
 }

@@ -6,5 +6,6 @@ type User struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	JobTitle  string `json:"jobTitle,omitempty"`
+	Feedback  string `json:"feedback"`
 	CreateAt  string `json:"createAt"`
 }

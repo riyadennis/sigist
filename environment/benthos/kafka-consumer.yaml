@@ -23,7 +23,7 @@ pipeline:
         processors:
           - label: rest_api
             http:
-              url: "http://localhost:8080/email"
+              url: "http://rest-service:8080/email"
               verb: POST
               headers:
                 Content-Type: application/json
@@ -37,7 +37,6 @@ pipeline:
           body = this
           meta = meta() # Propagate any new meta from within this branch block to the next block
     - switch:
-        # For any error, both client and server, we want to log it and send it to the DLQ
         - check: meta("http_status_code").number(500) >= 400 || meta("error_message") != null
           processors:
             - log:
