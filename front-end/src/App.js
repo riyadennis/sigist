@@ -2,9 +2,9 @@ import { useState } from 'react';
 import './App.css';
 import { useQuery,useMutation, gql } from '@apollo/client';
 
-const GET_USERS = gql`
+const GET_USER_FEEDBACK = gql`
   {
-	GetUser(filter: {}){
+    GetUserFeedback(filter: {}){
 		id
 		firstName
 		lastName
@@ -14,8 +14,8 @@ const GET_USERS = gql`
 `;
 
 const CREATE_USER = gql`
-  mutation saveUser($input: CreateUserInput!){
-	saveUser(input: $input){
+  mutation SaveUserFeedback($input: UserFeedbackInput!){
+    SaveUserFeedback(input: $input){
 		id
 		email
 		firstName
@@ -26,13 +26,13 @@ const CREATE_USER = gql`
 `;
 
 function DisplayUsers() {
-  const { loading, error, data, refetch } = useQuery(GET_USERS);
+  const { loading, error, data, refetch } = useQuery(GET_USER_FEEDBACK);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
-  if (data.GetUser.length === 0)  return <p>No Users</p>; 
+  if (data.GetUserFeedback.length === 0)  return <p>No Users</p>; 
 
-  return data.GetUser.map(({ id, firstName, lastName, email }) => (
+  return data.GetUserFeedback.map(({ id, firstName, lastName, email }) => (
       <div class="App" key={id}>
         <h3>{firstName}</h3>
         <h3>{lastName}</h3>
@@ -50,6 +50,7 @@ function DisplayForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [feedback, setFeedBack] = useState("");
 
   const [createUser] = useMutation(CREATE_USER, {
     variables: {
@@ -58,6 +59,7 @@ function DisplayForm() {
           lastName: lastName,
           email: email,
           jobTitle: jobTitle,
+          feedback: feedback
         }
       }
   });
@@ -65,7 +67,7 @@ function DisplayForm() {
 
   return (
     <div class="container">
-        <h1>Contact Form</h1>
+        <h1>Feedback Form</h1>
       <hr/>
         <div>
         <label for="fristName"><b>First Name</b></label>
@@ -107,12 +109,25 @@ function DisplayForm() {
             }}
           />
         </div>
+        <div>
+            <label for="feedBack"><b>Feedback</b></label>
+            <br/>
+            <textarea
+                name='feedBack'
+                placeholder='Feedback'
+                onChange={(event) => {
+                  setFeedBack(event.target.value);
+                }}
+                rows={4}
+                cols={100}
+            />
+        </div>
         <button
           onClick={() => {
             createUser();
           }}
           class="registerbtn" >
-          Create User
+          Send Feedback
         </button>
             
     </div>
