@@ -16,15 +16,16 @@ import (
 )
 
 var (
-	errFailedDBOperation = errors.New("failed to perform db operation")
-	logger               = otelzap.New(zap.NewNop())
-	id                   = "123"
-	createdAt            = time.Now().Format(time.RFC3339)
-	firstName            = "John"
-	lastName             = "Doe"
-	email                = "john@test.com"
-	feedback             = "This is a feedback"
-	jobTitle             = "Software Engineer"
+	errFailedDBOperation      = errors.New("failed to perform db operation")
+	errFailedToPublishToKafka = errors.New("failed to produce kafka message")
+	logger                    = otelzap.New(zap.NewNop())
+	id                        = "123"
+	createdAt                 = time.Now().Format(time.RFC3339)
+	firstName                 = "John"
+	lastName                  = "Doe"
+	email                     = "john@test.com"
+	feedback                  = "This is a feedback"
+	jobTitle                  = "Software Engineer"
 )
 
 type mockDB struct {
@@ -33,18 +34,20 @@ type mockDB struct {
 }
 
 type mockProducer struct {
+	err error
 }
 
 func (m *mockProducer) Produce(_ *kafka.Message, _ chan kafka.Event) error {
-	return nil
+	return m.err
 }
 
-func TestMutationResolverSaveUser(t *testing.T) {
+func TestMutationResolverSaveUserFeedback(t *testing.T) {
 	scenarios := []struct {
 		name        string
 		in          *model.UserFeedbackInput
 		out         *model.UserFeedback
 		mockDB      *mockDB
+		mockKafka   *mockProducer
 		expectedErr error
 	}{
 		{
@@ -70,7 +73,7 @@ func TestMutationResolverSaveUser(t *testing.T) {
 			expectedErr: errFailedDBOperation,
 		},
 		{
-			name: "db exec success",
+			name: "db exec success kafka error",
 			in: func() *model.UserFeedbackInput {
 				return &model.UserFeedbackInput{
 					FirstName: firstName,
@@ -81,6 +84,35 @@ func TestMutationResolverSaveUser(t *testing.T) {
 				}
 			}(),
 			mockDB: mockUserSaveStatementSuccess(t),
+			mockKafka: &mockProducer{
+				err: errFailedToPublishToKafka,
+			},
+			out: func() *model.UserFeedback {
+				return &model.UserFeedback{
+					ID:        &id,
+					FirstName: &firstName,
+					LastName:  &lastName,
+					Email:     &email,
+					JobTitle:  &jobTitle,
+					Feedback:  &feedback,
+					CreateAt:  &createdAt,
+				}
+			}(),
+			expectedErr: errFailedToPublishToKafka,
+		},
+		{
+			name: "success",
+			in: func() *model.UserFeedbackInput {
+				return &model.UserFeedbackInput{
+					FirstName: firstName,
+					LastName:  lastName,
+					Email:     email,
+					Feedback:  feedback,
+					JobTitle:  &jobTitle,
+				}
+			}(),
+			mockDB:    mockUserSaveStatementSuccess(t),
+			mockKafka: &mockProducer{},
 			out: func() *model.UserFeedback {
 				return &model.UserFeedback{
 					ID:        &id,
@@ -103,7 +135,7 @@ func TestMutationResolverSaveUser(t *testing.T) {
 					db:     scenario.mockDB.db,
 					KafkaConfig: &KafkaConfig{
 						Topic:    "test",
-						Producer: &mockProducer{},
+						Producer: scenario.mockKafka,
 					},
 				},
 			}

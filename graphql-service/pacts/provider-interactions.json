@@ -1,0 +1,58 @@
+{
+  "consumer": {
+    "name": "MyConsumer"
+  },
+  "provider": {
+    "name": "UserFeedbackProvider"
+  },
+  "interactions": [
+    {
+      "description": "A request to get foo",
+      "providerState": "User foo exists",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+            "query": "query { GetUserFeedback(filter: {}) { lastName } }"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "GetUserFeedback": [
+              {
+                "lastName": "Doe"
+              },
+              {
+                "lastName": "Dennis"
+              },
+              {
+                "lastName": "user"
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.lastName": {
+            "match": "type"
+          },
+          "$.body.name": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}

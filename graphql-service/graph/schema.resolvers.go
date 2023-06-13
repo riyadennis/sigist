@@ -57,7 +57,12 @@ func (r *mutationResolver) SaveUserFeedback(ctx context.Context, input model.Use
 		Headers:        []kafka.Header{{Key: id, Value: []byte("header values are binary")}},
 	}
 
-	r.KafkaConfig.Producer.Produce(message, nil)
+	err = r.KafkaConfig.Producer.Produce(message, nil)
+	if err != nil {
+		r.logger.Error("failed to publish to  kafka", zap.Error(err))
+		return nil, err
+	}
+
 	return feedback, nil
 }
 
