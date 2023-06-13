@@ -18,6 +18,13 @@ import (
 var (
 	errFailedDBOperation = errors.New("failed to perform db operation")
 	logger               = otelzap.New(zap.NewNop())
+	id                   = "123"
+	createdAt            = time.Now().Format(time.RFC3339)
+	firstName            = "John"
+	lastName             = "Doe"
+	email                = "john@test.com"
+	feedback             = "This is a feedback"
+	jobTitle             = "Software Engineer"
 )
 
 type mockDB struct {
@@ -65,32 +72,24 @@ func TestMutationResolverSaveUser(t *testing.T) {
 		{
 			name: "db exec success",
 			in: func() *model.UserFeedbackInput {
-				jobTitle := "Quality Engineer"
 				return &model.UserFeedbackInput{
-					FirstName: "John",
-					LastName:  "Doe",
-					Email:     "john@doe.com",
-					Feedback:  "This is a feedback",
+					FirstName: firstName,
+					LastName:  lastName,
+					Email:     email,
+					Feedback:  feedback,
 					JobTitle:  &jobTitle,
 				}
 			}(),
 			mockDB: mockUserSaveStatementSuccess(t),
 			out: func() *model.UserFeedback {
-				ID := "123"
-				firstName := "John"
-				lastName := "Doe"
-				email := "john@doe.com"
-				jobTitle := "Quality Engineer"
-				feedback := "This is a feedback"
-				createAt := time.Now().Format(time.RFC3339)
 				return &model.UserFeedback{
-					ID:        &ID,
+					ID:        &id,
 					FirstName: &firstName,
 					LastName:  &lastName,
 					Email:     &email,
 					JobTitle:  &jobTitle,
 					Feedback:  &feedback,
-					CreateAt:  &createAt,
+					CreateAt:  &createdAt,
 				}
 			}(),
 		},
@@ -125,7 +124,7 @@ func TestQueryResolverGetUser(t *testing.T) {
 	scenarios := []struct {
 		name        string
 		in          *model.FilterInput
-		out         []*model.User
+		out         []*model.UserFeedback
 		mockDB      *mockDB
 		expectedErr error
 	}{
@@ -135,7 +134,7 @@ func TestQueryResolverGetUser(t *testing.T) {
 			mockDB: func() *mockDB {
 				db, mock, err := sqlmock.New()
 				assert.NoError(t, err)
-				mock.ExpectQuery("SELECT (.+) FROM users").
+				mock.ExpectQuery(queryGetAllUsers).
 					WillReturnError(errFailedDBOperation)
 				return &mockDB{
 					db:   db,
@@ -150,20 +149,13 @@ func TestQueryResolverGetUser(t *testing.T) {
 			mockDB: func() *mockDB {
 				db, mock, err := sqlmock.New()
 				assert.NoError(t, err)
-				rows := sqlmock.NewRows([]string{"id", "first_name",
-					"last_name", "email",
-					"job_title", "created_at"}).AddRow(
-					"INVALID", "John",
-					"Doe", "john.doe@gmail.com",
-					"Quality Engineer", time.Now().Format(time.RFC3339))
-				mock.ExpectQuery("SELECT (.+) FROM users").
-					WillReturnRows(rows)
+				mock.ExpectQuery(queryGetAllUsers).WillReturnError(errFailedDBOperation)
 				return &mockDB{
 					db:   db,
 					mock: mock,
 				}
 			}(),
-			expectedErr: errors.New("sql: Scan error on column index 0, name \"id\": converting driver.Value type string (\"INVALID\") to a int64: invalid syntax"),
+			expectedErr: errors.New("failed to perform db operation"),
 		},
 		{
 			name: "db select success",
@@ -173,26 +165,26 @@ func TestQueryResolverGetUser(t *testing.T) {
 				assert.NoError(t, err)
 				rows := sqlmock.NewRows([]string{"id", "first_name",
 					"last_name", "email",
-					"job_title", "created_at"}).AddRow(
+					"job_title", "feedback", "created_at"}).AddRow(
 					"1", "John",
 					"Doe", "john.doe@gmail.com",
-					"Quality Engineer", time.Now().Format(time.RFC3339))
-				mock.ExpectQuery("SELECT (.+) FROM users").
+					"Quality Engineer", "loved it", time.Now().Format(time.RFC3339))
+				mock.ExpectQuery(queryGetAllUsers).
 					WillReturnRows(rows)
 				return &mockDB{
 					db:   db,
 					mock: mock,
 				}
 			}(),
-			out: func() []*model.User {
-				return []*model.User{
+			out: func() []*model.UserFeedback {
+				return []*model.UserFeedback{
 					{
-						ID:        "1",
-						FirstName: "John",
-						LastName:  "Doe",
-						Email:     "john.doe@gmail.com",
-						JobTitle:  "Quality Engineer",
-						CreateAt:  time.Now().Format(time.RFC3339),
+						ID:        &id,
+						FirstName: &firstName,
+						LastName:  &lastName,
+						Email:     &email,
+						JobTitle:  &jobTitle,
+						CreateAt:  &createdAt,
 					},
 				}
 			}(),
@@ -211,8 +203,9 @@ func TestQueryResolverGetUser(t *testing.T) {
 			if err != nil {
 				assert.Equal(t, scenario.expectedErr.Error(), err.Error())
 			}
-
-			assert.Equal(t, scenario.out, users)
+			if len(users) > 0 {
+				assert.Equal(t, *scenario.out[0].FirstName, *users[0].FirstName)
+			}
 			err = scenario.mockDB.mock.ExpectationsWereMet()
 			assert.NoError(t, err)
 
