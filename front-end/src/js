@@ -1,0 +1,23 @@
+const axios = require('axios');
+
+const options = {
+  method: 'POST',
+  url: 'https://openai80.p.rapidapi.com/edits',
+  headers: {
+    'content-type': 'application/json',
+    'X-RapidAPI-Key': 'e322aad340msh664393c15badd05p1f1174jsn82be515633bb',
+    'X-RapidAPI-Host': 'openai80.p.rapidapi.com'
+  },
+  data: {
+    model: 'text-davinci-edit-001',
+    input: 'What day of the wek is it?',
+    instruction: 'Fix the spelling mistakes'
+  }
+};
+
+try {
+	const response = await axios.request(options);
+	console.log(response.data);
+} catch (error) {
+	console.error(error);
+}

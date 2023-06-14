@@ -69,34 +69,10 @@ func NewService(conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-	db, err := sql.Open("sqlite3", conf.DBFile)
+	db, err := SetUpDB(conf.DBFile, conf.MigrationsPath)
 	if err != nil {
 		logger.Error("failed to open db connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB
-	}
-
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
-	if err != nil {
-		logger.Error("failed initialise Db driver", zap.Error(err))
-		return nil, ErrFailedTOOpenDB
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+conf.MigrationsPath,
-		"sqlite3", driver)
-	if err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			logger.Info("no migration to run")
-		} else {
-			logger.Error("failed initialise migration", zap.Error(err))
-			return nil, ErrFailedTORunMigration
-		}
-	}
-
-	err = m.Up()
-	if err != migrate.ErrNoChange && err != nil {
-		logger.Error("failed to run migration", zap.Error(err))
-		return nil, ErrFailedTORunMigration
 	}
 	server := &http.Server{
 		Addr:    conf.Port,
@@ -109,6 +85,31 @@ func NewService(conf internal.Config) (*Service, error) {
 		Server: server,
 		DB:     db,
 	}, nil
+}
+
+func SetUpDB(dbFile, migrationsPath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		return nil, err
+	}
+	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		"sqlite3", driver)
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return nil, ErrFailedTORunMigration
+	}
+
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return nil, ErrFailedTORunMigration
+	}
+
+	return db, nil
 }
 
 // Start the service will kick-start http server, kafka and other needed processes.

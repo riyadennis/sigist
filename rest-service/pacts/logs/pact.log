@@ -1,0 +1,41 @@
+I, [2023-06-13T21:26:23.623907 #44114]  INFO -- : Registered expected interaction GET /emails
+D, [2023-06-13T21:26:23.624213 #44114] DEBUG -- : {
+  "description": "email 'alice@gmail.com' is requested",
+  "providerState": "User email exists",
+  "request": {
+    "method": "GET",
+    "path": {
+      "json_class": "Pact::Term",
+      "data": {
+        "generate": "/emails",
+        "matcher": {
+          "json_class": "Regexp",
+          "o": 0,
+          "s": ""
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+    },
+    "body": {
+      "json_class": "Pact::SomethingLike",
+      "contents": "[\n{\n\t\t\"id\": \"1\",\n\t\t\"email\": \"alice@gmail.com\",\n\t\t\"source_name\": \"default\",\n\t\t\"created_at\": \"2023-06-13T21:26:23+01:00\"\n\t}\n]"
+    }
+  },
+  "metadata": null
+}
+W, [2023-06-13T21:26:23.627641 #44114]  WARN -- : Verifying - actual interactions do not match expected interactions. 
+Missing requests:
+	GET /emails
+
+
+
+W, [2023-06-13T21:26:23.627762 #44114]  WARN -- : Missing requests:
+	GET /emails
+
+
+
+I, [2023-06-13T21:26:23.629157 #44114]  INFO -- : Cleared interactions

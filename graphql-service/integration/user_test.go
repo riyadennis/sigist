@@ -3,7 +3,6 @@ package integration
 import (
 	"context"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"github.com/orlangure/gnomock"
 	"github.com/orlangure/gnomock/preset/kafka"
 	flag "github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/riyadennis/sigist/graphql-service/graph/model"
 	"github.com/riyadennis/sigist/graphql-service/internal"

@@ -50,7 +50,7 @@ func (e *Email) SaveEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	emailID := uuid.New().String()
 	createdAt := time.Now().Format(time.RFC3339)
-	res, err := saveEmail(e.db, re, emailID, createdAt)
+	res, err := SaveEmail(e.db, re, emailID, createdAt)
 	if err != nil {
 		e.logger.Error("failed to execute statement", zap.Error(err))
 		_ = HTTPResponse(w, err, http.StatusInternalServerError, "failed to save email")
@@ -74,29 +74,11 @@ func (e *Email) SaveEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *Email) GetAllEmails(w http.ResponseWriter, r *http.Request) {
-	rows, err := e.db.Query(queryGetAllEmails)
+	emails, err := FetchEmails(e.db, e.logger)
 	if err != nil {
-		e.logger.Error("failed to execute query", zap.Error(err))
+		e.logger.Error("failed to fetch emails", zap.Error(err))
 		_ = HTTPResponse(w, err, http.StatusInternalServerError, "failed to fetch emails")
 		return
-	}
-	defer rows.Close()
-	emails := make([]*EmailResponse, 0)
-	for rows.Next() {
-		response := &EmailResponse{}
-		err := rows.Scan(&response.ID, &response.SourceName, &response.Email, &response.CreatedAt)
-		if err != nil {
-			e.logger.Error("failed to scan row", zap.Error(err))
-			_ = HTTPResponse(w, err, http.StatusInternalServerError, "failed to fetch emails")
-			return
-		}
-		emails = append(emails, response)
-		e.logger.Debug("email", zap.String("id", response.ID),
-			zap.String("source", response.SourceName),
-			zap.String("email", response.Email),
-			zap.String("created_at", response.CreatedAt),
-		)
-
 	}
 
 	data, err := json.Marshal(emails)
@@ -110,7 +92,33 @@ func (e *Email) GetAllEmails(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func saveEmail(db *sql.DB, req *Request, uuid, createdAt string) (sql.Result, error) {
+func FetchEmails(db *sql.DB, logger *otelzap.Logger) ([]*EmailResponse, error) {
+	rows, err := db.Query(queryGetAllEmails)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	emails := make([]*EmailResponse, 0)
+	for rows.Next() {
+		response := &EmailResponse{}
+		err := rows.Scan(&response.ID, &response.SourceName, &response.Email, &response.CreatedAt)
+		if err != nil {
+			logger.Error("failed to scan row", zap.Error(err))
+			return nil, err
+		}
+		emails = append(emails, response)
+		logger.Debug("email", zap.String("id", response.ID),
+			zap.String("source", response.SourceName),
+			zap.String("email", response.Email),
+			zap.String("created_at", response.CreatedAt),
+		)
+
+	}
+
+	return emails, nil
+}
+
+func SaveEmail(db *sql.DB, req *Request, uuid, createdAt string) (sql.Result, error) {
 	stmt, err := db.Prepare(querySaveEmail)
 	if err != nil {
 		return nil, err
