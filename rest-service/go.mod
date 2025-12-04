@@ -10,6 +10,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.16.1
 	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/pact-foundation/pact-go v1.7.0
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.2.1
 	go.uber.org/zap v1.24.0
 )
@@ -23,11 +24,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.5.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
-	github.com/pact-foundation/pact-go v1.7.0 // indirect
-	github.com/spf13/cobra v1.1.3 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.2.1 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
