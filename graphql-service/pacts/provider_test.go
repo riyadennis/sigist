@@ -1,10 +1,11 @@
 package pacts
 
 import (
+	"testing"
+
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var lastName = "" // User doesn't exist

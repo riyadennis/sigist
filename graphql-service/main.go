@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/riyadennis/sigist/graphql-service/internal"
-	"github.com/riyadennis/sigist/graphql-service/service"
-	"go.uber.org/zap"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/riyadennis/sigist/graphql-service/internal"
+	"github.com/riyadennis/sigist/graphql-service/service"
+	"go.uber.org/zap"
 )
 
 func main() {

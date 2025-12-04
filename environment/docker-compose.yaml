@@ -67,25 +67,23 @@ services:
     networks:
       datapipe:
     volumes:
-      - "./db/user-feedback.sqlite:/user-feedback.sqlite"
+      - "./db/feedback.sqlite:/feedback.sqlite"
   rest-service:
     container_name: rest-service
     build:
       context: ../rest-service
       dockerfile: ../rest-service/Dockerfile
-    depends_on:
-      - graphql-service
     ports:
       - '8080:8080'
     environment:
       - LOG_LEVEL=debug
       - PORT=:8080
       - ENVIRONMENT=dev
-      - DB_FILE=feedback.sqlite
+      - DB_FILE=email.sqlite
     networks:
       datapipe:
     volumes:
-      - "./db/feedback.sqlite:/feedback.sqlite"
+      - "./db/email.sqlite:/email.sqlite"
   benthos:
     container_name: benthos
     image: jeffail/benthos:4.7.0
