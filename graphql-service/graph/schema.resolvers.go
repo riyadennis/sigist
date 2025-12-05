@@ -6,18 +6,17 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/riyadennis/sigist/graphql-service/graph/generated"
 	"github.com/riyadennis/sigist/graphql-service/graph/model"
-	"go.uber.org/zap"
 )
 
 // SaveUserFeedback is the resolver for the SaveUserFeedback field.
-func (r *mutationResolver) SaveUserFeedback(ctx context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error) {
+func (r *mutationResolver) SaveUserFeedback(_ context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error) {
 	createdAt := time.Now().Format(time.RFC3339)
 	id := uuid.New().String()
 
@@ -45,19 +44,17 @@ func (r *mutationResolver) SaveUserFeedback(ctx context.Context, input model.Use
 		Feedback:  &input.Feedback,
 		CreateAt:  &createdAt,
 	}
-
-	kafkaData, err := json.Marshal(feedback)
-	if err != nil {
-		r.logger.Error("failed to marshal feedback", zap.Error(err))
-		return nil, err
-	}
-	message := &kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &r.KafkaConfig.Topic, Partition: kafka.PartitionAny},
-		Value:          kafkaData,
-		Headers:        []kafka.Header{{Key: id, Value: []byte("header values are binary")}},
-	}
-
-	err = r.KafkaConfig.Producer.Produce(message, nil)
+	// write to kafka and close the connection
+	err = r.KafkaConfig.Writer.Write(
+		&model.UserFeedback{
+			ID:        &id,
+			Email:     &input.Email,
+			FirstName: &input.FirstName,
+			LastName:  &input.LastName,
+			JobTitle:  input.JobTitle,
+			Feedback:  &input.Feedback,
+			CreateAt:  &createdAt,
+		})
 	if err != nil {
 		r.logger.Error("failed to publish to  kafka", zap.Error(err))
 		return nil, err

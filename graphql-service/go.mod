@@ -1,12 +1,13 @@
 module github.com/riyadennis/sigist/graphql-service
 
-go 1.20
+go 1.23.0
+
+toolchain go1.24.5
 
 require (
 	github.com/99designs/gqlgen v0.17.32
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/alexflint/go-arg v1.4.3
-	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/cucumber/godog v0.12.0
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.1
@@ -16,6 +17,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/orlangure/gnomock v0.28.0
 	github.com/pact-foundation/pact-go v1.7.0
+	github.com/segmentio/kafka-go v0.4.49
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.2.0
@@ -52,6 +54,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/klauspost/compress v1.16.6 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -59,17 +62,17 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/segmentio/kafka-go v0.4.39 // indirect
+	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.2.0 // indirect
 	go.opentelemetry.io/otel v1.15.1 // indirect
 	go.opentelemetry.io/otel/metric v0.38.1 // indirect
 	go.opentelemetry.io/otel/trace v1.15.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

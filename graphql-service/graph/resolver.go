@@ -1,9 +1,11 @@
 package graph
 
 import (
+	"context"
 	"database/sql"
 	"errors"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+
+	"github.com/riyadennis/sigist/graphql-service/internal"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 )
 
@@ -12,32 +14,24 @@ var (
 	ErrorFailedToSaveUser = errors.New("failed to save user")
 )
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
-
-// KafkaConfig encapsulates the kafka producer and the topic name
-type KafkaConfig struct {
-	Topic    string
-	Producer Producer
-}
-
-type Producer interface {
-	Produce(msg *kafka.Message, deliveryChan chan kafka.Event) error
-}
-
 // Resolver encapsulates the dependencies for the resolver
 type Resolver struct {
 	logger      *otelzap.Logger
 	db          *sql.DB
-	KafkaConfig *KafkaConfig
+	KafkaConfig *internal.KafkaConfig
+	KafkaWriter *internal.KafkaWriter
 }
 
 // NewResolver creates a new resolver
-func NewResolver(logger *otelzap.Logger, db *sql.DB, kafkaConfig *KafkaConfig) *Resolver {
+func NewResolver(ctx context.Context, logger *otelzap.Logger, db *sql.DB, kafkaConfig *internal.KafkaConfig) (*Resolver, error) {
+	connection, err := kafkaConfig.Connection(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &Resolver{
 		logger:      logger,
 		db:          db,
 		KafkaConfig: kafkaConfig,
-	}
+		KafkaWriter: &internal.KafkaWriter{Connection: connection},
+	}, nil
 }

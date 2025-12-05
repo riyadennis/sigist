@@ -16,7 +16,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to load config: %s", err)
 	}
-	server, err := service.NewService(config)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
+	server, err := service.NewService(ctx, config)
 	if err != nil {
 		log.Fatal("failed to initialise service ", err)
 	}
@@ -26,7 +29,6 @@ func main() {
 		log.Fatal("failed to start service", err)
 	}
 
-	ctx := context.Background()
 	err = server.ShutDown(ctx)
 	if err != nil {
 		log.Fatal("failed to shut down service", zap.Error(err))

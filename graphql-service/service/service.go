@@ -4,15 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"go.uber.org/zap"
 	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -46,8 +46,8 @@ var (
 	// ErrFailedTORunMigration means that the migration couldn't be run
 	ErrFailedTORunMigration = errors.New("failed to run migration")
 
-	// ErrFailedToCreateKafkaProducer means that the kafka producer couldn't be created
-	ErrFailedToCreateKafkaProducer = errors.New("failed to create kafka producer")
+	// ErrFailedToOpenKafkaConnection means that the kafka connection couldn't be created
+	ErrFailedToOpenKafkaConnection = errors.New("failed to open kafka connection")
 )
 
 // HTTPServer encapsulates two http server operations  that we need to execute in the service
@@ -68,7 +68,7 @@ type Service struct {
 }
 
 // NewService creates a new service
-func NewService(conf internal.Config) (*Service, error) {
+func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	log, err := logger(conf.Env)
 	if err != nil {
 		return nil, err
@@ -80,26 +80,17 @@ func NewService(conf internal.Config) (*Service, error) {
 		logger.Error("failed to open db connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB
 	}
-
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": conf.KafkaBroker,
-	})
+	kc, err := internal.KafkaSetup(ctx, conf)
 	if err != nil {
-		logger.Error("failed to initialise kafka producer", zap.Error(err))
-		return nil, ErrFailedToCreateKafkaProducer
+		logger.Error("failed to open kafka connection", zap.Error(err))
+		return nil, ErrFailedToOpenKafkaConnection
 	}
 
+	resolver, err := graph.NewResolver(ctx, logger, db, kc)
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
 			generated.Config{
-				Resolvers: graph.NewResolver(
-					logger,
-					db,
-					&graph.KafkaConfig{
-						Topic:    conf.KafkaTopic,
-						Producer: producer,
-					},
-				),
+				Resolvers: resolver,
 			}),
 	)
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
