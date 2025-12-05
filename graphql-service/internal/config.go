@@ -19,6 +19,7 @@ type Config struct {
 	MigrationsPath string `arg:"env:MIGRATIONS_PATH" default:"migrations"`
 	KafkaBroker    string `arg:"env:KAFKA_BROKER" validate:"required,notblank"`
 	KafkaTopic     string `arg:"env:KAFKA_TOPIC" validate:"required,notblank"`
+	KafkaPartition int    `arg:"env:KAFKA_PARTITION" default:"0"`
 }
 
 // NewConfig return a new instance of Config

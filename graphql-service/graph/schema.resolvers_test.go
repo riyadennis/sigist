@@ -4,15 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
+
+	"github.com/riyadennis/sigist/graphql-service/graph/model"
+	"github.com/riyadennis/sigist/graphql-service/internal"
 )
 
 var (
@@ -32,13 +33,15 @@ type mockDB struct {
 	db   *sql.DB
 	mock sqlmock.Sqlmock
 }
-
-type mockProducer struct {
+type mockKafkaConnection struct {
 	err error
 }
 
-func (m *mockProducer) Produce(_ *kafka.Message, _ chan kafka.Event) error {
-	return m.err
+func (mc *mockKafkaConnection) Write([]byte) (int, error) {
+	return 0, mc.err
+}
+func (mc *mockKafkaConnection) Close() error {
+	return mc.err
 }
 
 func TestMutationResolverSaveUserFeedback(t *testing.T) {
@@ -47,7 +50,7 @@ func TestMutationResolverSaveUserFeedback(t *testing.T) {
 		in          *model.UserFeedbackInput
 		out         *model.UserFeedback
 		mockDB      *mockDB
-		mockKafka   *mockProducer
+		mockKafka   *mockKafkaConnection
 		expectedErr error
 	}{
 		{
@@ -84,8 +87,8 @@ func TestMutationResolverSaveUserFeedback(t *testing.T) {
 				}
 			}(),
 			mockDB: mockUserSaveStatementSuccess(t),
-			mockKafka: &mockProducer{
-				err: errFailedToPublishToKafka,
+			mockKafka: &mockKafkaConnection{
+				err: errors.New("failed to produce kafka message"),
 			},
 			out: func() *model.UserFeedback {
 				return &model.UserFeedback{
@@ -112,7 +115,7 @@ func TestMutationResolverSaveUserFeedback(t *testing.T) {
 				}
 			}(),
 			mockDB:    mockUserSaveStatementSuccess(t),
-			mockKafka: &mockProducer{},
+			mockKafka: &mockKafkaConnection{},
 			out: func() *model.UserFeedback {
 				return &model.UserFeedback{
 					ID:        &id,
@@ -133,9 +136,11 @@ func TestMutationResolverSaveUserFeedback(t *testing.T) {
 				Resolver: &Resolver{
 					logger: logger,
 					db:     scenario.mockDB.db,
-					KafkaConfig: &KafkaConfig{
-						Topic:    "test",
-						Producer: scenario.mockKafka,
+					KafkaConfig: &internal.KafkaConfig{
+						Topic: "test",
+						Writer: &internal.KafkaWriter{
+							Connection: scenario.mockKafka,
+						},
 					},
 				},
 			}

@@ -1,49 +1,42 @@
 services:
   db-kafka:
-    container_name: db-kafka
-    image: bitnami/kafka:latest
-    ports:
-      - '9092:9092'
-      - '9093:9093'
+    image: lensesio/fast-data-dev:3.9.0
+    hostname: kafka
     environment:
-      - KAFKA_BROKER_ID=1
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://db-kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
-      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_NUM_PARTITIONS=2
-      - KAFKA_ENABLE_KRAFT=no
-    depends_on:
-      - zookeeper
-    volumes:
-      - data-kafka:/bitnami/kafka
+      ADV_HOST: kafka
+      RUNNING_SAMPLEDATA: 1
+      RUNTESTS: 0
+      # The next three variables are required if you want to have Kafka
+      # available at the host for local development. They are tailored to KRaft
+      # fast-data-dev (3.9.x or later). The broker will be available at localhost:9092.
+      KAFKA_LISTENERS: PLAINTEXT://:9092,DOCKERCOMPOSE://:19092,CONTROLLER://:16062
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKERCOMPOSE://demo-kafka:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        DOCKERCOMPOSE:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,
+        SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
+      # Makes things a little lighter
+      DISABLE: debezium-mongodb,debezium-mysql,debezium-postgres,debezium-sqlserver,debezium-jdbc
+    # These are the ports for Kafka and Schema Registry. You can disable them if
+    # you don't need to access Kafka from your host.
+    ports:
+      - 9092:9092
+      - 8081:8081
+      - 8083:8083
+      - 3030:3030
     networks:
       datapipe:
-  zookeeper:
-    container_name: zookeeper
-    image: bitnami/zookeeper:latest
-    ports:
-      - '2181:2181'
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
     volumes:
-      - data-zookeeper:/bitnami/zookeeper
-    tmpfs: "/datalog"
-    networks:
-      datapipe:
+      - data-kafka:/data
   kafka-ui:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:v0.6.0
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=db-kafka:9092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
       - LOGGING_LEVEL_ROOT=error
       - LOGGING_LEVEL_COM_PROVECTUS=error
       - KAFKA_CLUSTERS_0_JMXPORT=9997
+      - DYNAMIC_CONFIG_ENABLED=true
     networks:
       datapipe:
     ports:
@@ -98,7 +91,7 @@ services:
       datapipe:
 volumes:
   data-kafka:
-  data-zookeeper:
+    driver: local
 networks:
   datapipe:
     driver: bridge
