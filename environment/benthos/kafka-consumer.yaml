@@ -11,7 +11,7 @@ http:
 input:
   label: "kafka_input"
   kafka:
-    addresses: ["db-kafka:9092"]
+    addresses: ["kafka:19092", "localhost:9092"]
     topics: ["data-pipe"]
     consumer_group: "data-pipe"
 buffer:

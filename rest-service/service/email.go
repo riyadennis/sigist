@@ -45,6 +45,7 @@ func (e *Email) SaveEmail(w http.ResponseWriter, r *http.Request) {
 	re := &Request{}
 	err := request.Decode(&re)
 	if err != nil {
+		e.logger.Error("failed to decode request, got error", zap.Error(err))
 		_ = HTTPResponse(w, err, http.StatusBadRequest, "failed to decode request")
 		return
 	}
