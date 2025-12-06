@@ -80,9 +80,23 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 		logger.Error("failed to open db connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB
 	}
-	kc, err := internal.KafkaSetup(ctx, conf)
+	rc := RetryConfig{
+		MaxAttempts:  100,
+		InitialDelay: 10 * 1 * time.Second,
+		MaxDelay:     20 * 1 * time.Second,
+		Multiplier:   10,
+	}
+
+	var kc *internal.KafkaConfig
+	err = Retry(ctx, rc, func() error {
+		kc, err = internal.KafkaSetup(ctx, conf)
+		if err != nil {
+			return ErrFailedToOpenKafkaConnection
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error("failed to open kafka connection", zap.Error(err))
+		logger.Error("failed initialise kafka connection", zap.Error(err))
 		return nil, ErrFailedToOpenKafkaConnection
 	}
 
