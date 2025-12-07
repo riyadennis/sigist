@@ -14,9 +14,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+
+	"github.com/riyadennis/event-management/graphql-service/graph/model"
 )
 
 // region    ************************** generated!.gotpl **************************

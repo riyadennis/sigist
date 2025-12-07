@@ -6,8 +6,8 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/riyadennis/sigist/graphql-service/internal"
-	"github.com/riyadennis/sigist/graphql-service/service"
+	"github.com/riyadennis/event-management/graphql-service/internal"
+	"github.com/riyadennis/event-management/graphql-service/service"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +18,7 @@ func main() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	server, err := service.NewService(ctx, config)
 	if err != nil {
 		log.Fatal("failed to initialise service ", err)

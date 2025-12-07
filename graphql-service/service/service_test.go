@@ -1,9 +1,12 @@
 package service
 
 import (
-	"github.com/riyadennis/sigist/graphql-service/internal"
-	"github.com/stretchr/testify/assert"
+	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/riyadennis/event-management/graphql-service/internal"
 )
 
 func TestNewService(t *testing.T) {
@@ -18,10 +21,10 @@ func TestNewService(t *testing.T) {
 			expectedErr: ErrFailedTORunMigration,
 		},
 	}
-
+	ctx := context.Background()
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			_, err := NewService(scenario.cfg)
+			_, err := NewService(ctx, scenario.cfg)
 			assert.Equal(t, scenario.expectedErr, err)
 		})
 	}
