@@ -12,8 +12,8 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
-	"github.com/riyadennis/sigist/graphql-service/internal"
+	"github.com/riyadennis/event-management/graphql-service/graph/model"
+	"github.com/riyadennis/event-management/graphql-service/internal"
 )
 
 var (

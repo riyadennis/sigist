@@ -18,15 +18,16 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/riyadennis/sigist/graphql-service/graph"
-	"github.com/riyadennis/sigist/graphql-service/graph/generated"
-	"github.com/riyadennis/sigist/graphql-service/internal"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/riyadennis/event-management/graphql-service/graph"
+	"github.com/riyadennis/event-management/graphql-service/graph/generated"
+	"github.com/riyadennis/event-management/graphql-service/internal"
 )
 
 var (

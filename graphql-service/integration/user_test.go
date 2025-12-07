@@ -13,9 +13,9 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
-	"github.com/riyadennis/sigist/graphql-service/internal"
-	"github.com/riyadennis/sigist/graphql-service/service"
+	"github.com/riyadennis/event-management/graphql-service/graph/model"
+	"github.com/riyadennis/event-management/graphql-service/internal"
+	"github.com/riyadennis/event-management/graphql-service/service"
 )
 
 var kafkaContainer *gnomock.Container

@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/riyadennis/sigist/graphql-service/internal"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+
+	"github.com/riyadennis/event-management/graphql-service/internal"
 )
 
 var (

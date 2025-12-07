@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/riyadennis/sigist/graphql-service/graph/generated"
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
+	"github.com/riyadennis/event-management/graphql-service/graph/generated"
+	"github.com/riyadennis/event-management/graphql-service/graph/model"
 )
 
 // SaveUserFeedback is the resolver for the SaveUserFeedback field.

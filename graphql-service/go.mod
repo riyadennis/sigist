@@ -1,4 +1,4 @@
-module github.com/riyadennis/sigist/graphql-service
+module github.com/riyadennis/event-management/graphql-service
 
 go 1.23.0
 

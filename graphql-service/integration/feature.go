@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/riyadennis/sigist/graphql-service/graph/model"
+	"github.com/riyadennis/event-management/graphql-service/graph/model"
 )
 
 var (
