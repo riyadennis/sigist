@@ -2,9 +2,9 @@ package graph
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
 	"github.com/riyadennis/event-management/graphql-service/internal"
@@ -18,20 +18,20 @@ var (
 // Resolver encapsulates the dependencies for the resolver
 type Resolver struct {
 	logger      *otelzap.Logger
-	db          *sql.DB
+	db          *pgxpool.Pool
 	KafkaConfig *internal.KafkaConfig
 	KafkaWriter *internal.KafkaWriter
 }
 
 // NewResolver creates a new resolver
-func NewResolver(ctx context.Context, logger *otelzap.Logger, db *sql.DB, kafkaConfig *internal.KafkaConfig) (*Resolver, error) {
+func NewResolver(ctx context.Context, logger *otelzap.Logger, pool *pgxpool.Pool, kafkaConfig *internal.KafkaConfig) (*Resolver, error) {
 	connection, err := kafkaConfig.Connection(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Resolver{
 		logger:      logger,
-		db:          db,
+		db:          pool,
 		KafkaConfig: kafkaConfig,
 		KafkaWriter: &internal.KafkaWriter{Connection: connection},
 	}, nil

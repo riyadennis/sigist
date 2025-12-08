@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -16,22 +15,17 @@ import (
 )
 
 // SaveUserFeedback is the resolver for the SaveUserFeedback field.
-func (r *mutationResolver) SaveUserFeedback(_ context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error) {
-	createdAt := time.Now().Format(time.RFC3339)
+func (r *mutationResolver) SaveUserFeedback(ctx context.Context, input model.UserFeedbackInput) (*model.UserFeedback, error) {
 	id := uuid.New().String()
 
-	res, err := saveUserFeedback(r.db, input, id, createdAt)
+	res, err := saveUserFeedback(ctx, r.db, input, id)
 	if err != nil {
 		r.logger.Error("failed to execute statement", zap.Error(err))
 		return nil, err
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		r.logger.Error("failed to fetch result from db after saving feedback", zap.Error(err))
-		return nil, err
-	}
 
-	if rows == 0 {
+	if res == 0 {
+		r.logger.Error("failed to insert any data", zap.Error(err))
 		return nil, ErrorFailedToSaveUser
 	}
 
@@ -42,7 +36,6 @@ func (r *mutationResolver) SaveUserFeedback(_ context.Context, input model.UserF
 		LastName:  &input.LastName,
 		JobTitle:  input.JobTitle,
 		Feedback:  &input.Feedback,
-		CreateAt:  &createdAt,
 	}
 	// write to kafka and close the connection
 	err = r.KafkaConfig.Writer.Write(
@@ -53,7 +46,6 @@ func (r *mutationResolver) SaveUserFeedback(_ context.Context, input model.UserF
 			LastName:  &input.LastName,
 			JobTitle:  input.JobTitle,
 			Feedback:  &input.Feedback,
-			CreateAt:  &createdAt,
 		})
 	if err != nil {
 		r.logger.Error("failed to publish to  kafka", zap.Error(err))
@@ -67,7 +59,7 @@ func (r *mutationResolver) SaveUserFeedback(_ context.Context, input model.UserF
 func (r *queryResolver) GetUserFeedback(ctx context.Context, filter model.FilterInput) ([]*model.UserFeedback, error) {
 	var userFeedbacks []*model.UserFeedback
 
-	rows, err := getUserRows(r.db, filter)
+	rows, err := getUserRows(ctx, r.db, filter)
 	if err != nil {
 		r.logger.Error("failed to execute query", zap.Error(err))
 		return nil, err
