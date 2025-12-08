@@ -49,7 +49,7 @@ func NewConfig() (Config, error) {
 	return conf, err
 }
 
-func setUpPostgresDB(ctx context.Context, conf Config) (*pgxpool.Pool, error) {
+func SetUpPostgresDB(ctx context.Context, conf Config) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, getURLForConnectionPool(conf))
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func setUpPostgresDB(ctx context.Context, conf Config) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func runMigration(logger *otelzap.Logger, conf Config) error {
+func RunMigration(logger *otelzap.Logger, conf Config) error {
 	m, err := migrate.New("file://"+conf.MigrationsPath, getDBURLForMigration(conf))
 
 	if err != nil {
