@@ -51,7 +51,7 @@ func (kc *KafkaConfig) Connection(ctx context.Context) (KafkaConnection, error) 
 	if err != nil {
 		return nil, err
 	}
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	err = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
 	if err != nil {
 		return nil, err
 	}
