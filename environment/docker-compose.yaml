@@ -86,12 +86,15 @@ services:
     ports:
       - '9019:8080'
   graphql-service:
+    restart: on-failure
     container_name: graphql-service
     build:
       context: ../graphql-service
       dockerfile: ../graphql-service/Dockerfile
     depends_on:
       - kafka
+      - postgres_db
+    links:
       - postgres_db
     ports:
         - '4000:4000'
@@ -109,8 +112,6 @@ services:
       - MIGRATIONS_PATH=/app/migrations
     networks:
       datapipe:
-    volumes:
-      - "./db/feedback.sqlite:/feedback.sqlite"
   rest-service:
     container_name: rest-service
     build:
