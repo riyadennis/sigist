@@ -70,6 +70,7 @@ func NewService(conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
+	pool,err :=
 	conn, err := SetUpDB(conf.DBFile, conf.MigrationsPath)
 	if err != nil {
 		logger.Error("failed to open conn connection", zap.Error(err))

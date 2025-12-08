@@ -1,4 +1,4 @@
-module github.com/riyadennis/event-management/db
+module github.com/riyadennis/event-management/foundation
 
 go 1.24.5
 
