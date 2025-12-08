@@ -1,4 +1,4 @@
-module github.com/riyadennis/sigist/rest-service
+module github.com/riyadennis/event-management/rest-service
 
 go 1.19
 
