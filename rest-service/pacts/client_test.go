@@ -2,13 +2,15 @@ package pacts
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/pact-foundation/pact-go/dsl"
-	"github.com/riyadennis/sigist/rest-service/service"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+
+	"github.com/riyadennis/event-management/rest-service/service"
 )
 
 func TestClientPact_Local(t *testing.T) {

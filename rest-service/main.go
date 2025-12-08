@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/riyadennis/sigist/rest-service/internal"
-	"github.com/riyadennis/sigist/rest-service/service"
+	"github.com/riyadennis/event-management/rest-service/internal"
+	"github.com/riyadennis/event-management/rest-service/service"
 )
 
 func main() {
