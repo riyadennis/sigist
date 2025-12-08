@@ -1,4 +1,48 @@
 services:
+  postgres_db:
+    # Official Postgres image from DockerHub (we use the last version)
+    image: "postgres:14.1-alpine"
+    container_name: postgres_db
+    restart: always
+
+    # By default, a Postgres database is running on the 5432 port.
+    # If we want to access the database from our computer (outside the container),
+    # we must share the port with our computer's port.
+    # The syntax is [port we want on our machine]:[port we want to retrieve in the container]
+    # Note: You are free to change your computer's port,
+    # but take into consideration that it will change the way
+    # you are connecting to your database.
+    ports:
+      - "5434:5432"
+
+    environment:
+      POSTGRES_USER: username # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: password # The PostgreSQL password (useful to connect to the database)
+      POSTGRES_DB: feedback # The PostgreSQL default database (automatically created at first launch)
+
+    ####
+    ## If you want to use a `.env` file, please comment the `environment` section.
+    ####
+
+    # The `env_file` tag allows us to declare an environment file
+    #env_file:
+    #  - .env # The name of your environment file (the one at the repository root)
+
+    ####
+    ## If you want to persist the database data, please uncomment the lines below.
+    ####
+
+    # The `volumes` tag allows us to share a folder with our container.
+    # Its syntax is as follows: [folder path on our machine]:[folder path to retrieve in the container]
+    volumes:
+      # In this example, we share the folder `db-data` in our root repository, with the default PostgreSQL data path.
+      # It means that every time the repository is modifying the data inside
+      # of `/var/lib/postgresql/data/`, automatically the change will appear in `db-data`.
+      # You don't need to create the `db-data` folder. Docker Compose will do it for you.
+      # if we need to inspect the location of the volume we can use docker volume inspect db-data
+      - ./postgresql/data//:/var/lib/postgresql/data/
+    networks:
+      datapipe:
   kafka:
     image: lensesio/fast-data-dev:3.9.0
     hostname: kafka
@@ -48,6 +92,7 @@ services:
       dockerfile: ../graphql-service/Dockerfile
     depends_on:
       - kafka
+      - postgres_db
     ports:
         - '4000:4000'
     environment:
@@ -56,7 +101,12 @@ services:
       - ENVIRONMENT=dev
       - KAFKA_BROKER=kafka:19092
       - KAFKA_TOPIC=data-pipe
-      - DB_FILE=user-feedback.sqlite
+      - DB_USER=username
+      - DB_PASSWORD=password
+      - DB_NAME=feedback
+      - DB_HOST=postgres_db
+      - DB_PORT=5432
+      - MIGRATIONS_PATH=/app/migrations
     networks:
       datapipe:
     volumes:
@@ -85,6 +135,7 @@ services:
        - config.yaml
     depends_on:
       - rest-service
+      - kafka
     volumes:
       - "./benthos/kafka-consumer.yaml:/config.yaml"
     networks:
