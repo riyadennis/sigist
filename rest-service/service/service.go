@@ -70,21 +70,21 @@ func NewService(conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-	db, err := SetUpDB(conf.DBFile, conf.MigrationsPath)
+	conn, err := SetUpDB(conf.DBFile, conf.MigrationsPath)
 	if err != nil {
-		logger.Error("failed to open db connection", zap.Error(err))
+		logger.Error("failed to open conn connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB
 	}
 	server := &http.Server{
 		Addr:    conf.Port,
-		Handler: newRouter(db, logger),
+		Handler: newRouter(conn, logger),
 	}
 
 	return &Service{
 		Conf:   conf,
 		Logger: logger,
 		Server: server,
-		DB:     db,
+		DB:     conn,
 	}, nil
 }
 
