@@ -17,7 +17,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func setUpPostgresDB(ctx context.Context, conf internal.Config) (*pgxpool.Pool, error) {
+func SetUpPostgresDB(ctx context.Context, conf internal.Config) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, getURLForConnectionPool(conf))
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func setUpPostgresDB(ctx context.Context, conf internal.Config) (*pgxpool.Pool, 
 	return pool, nil
 }
 
-func runMigration(logger *otelzap.Logger, conf internal.Config) error {
+func RunMigration(logger *otelzap.Logger, conf internal.Config) error {
 	m, err := migrate.New("file://"+conf.MigrationsPath, getDBURLForMigration(conf))
 
 	if err != nil {
