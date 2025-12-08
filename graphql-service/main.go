@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 
-	_ "github.com/mattn/go-sqlite3"
-
 	"github.com/riyadennis/event-management/graphql-service/internal"
 	"github.com/riyadennis/event-management/graphql-service/service"
 	"go.uber.org/zap"

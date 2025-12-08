@@ -2,28 +2,21 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"net"
 	"net/http"
 	"os"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/mattn/go-sqlite3"
+	"go.uber.org/zap"
 
 	"github.com/riyadennis/event-management/graphql-service/graph"
 	"github.com/riyadennis/event-management/graphql-service/graph/generated"
@@ -65,7 +58,7 @@ type Service struct {
 	Logger  *otelzap.Logger
 	Sigint  chan os.Signal
 	errChan chan error
-	DB      *sql.DB
+	DB      *pgxpool.Pool
 }
 
 // NewService creates a new service
@@ -76,10 +69,15 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-	db, err := sql.Open("sqlite3", conf.DBFile)
+	pool, err := setUpPostgresDB(ctx, conf)
 	if err != nil {
-		logger.Error("failed to open db connection", zap.Error(err))
-		return nil, ErrFailedTOOpenDB
+		logger.Error("failed initialise database pool", zap.Error(err))
+		return nil, ErrFailedToOpenKafkaConnection
+	}
+	err = runMigration(logger, conf)
+	if err != nil {
+		//already logged
+		return nil, err
 	}
 	rc := RetryConfig{
 		MaxAttempts:  100,
@@ -101,36 +99,13 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 		return nil, ErrFailedToOpenKafkaConnection
 	}
 
-	resolver, err := graph.NewResolver(ctx, logger, db, kc)
+	resolver, err := graph.NewResolver(ctx, logger, pool, kc)
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
 			generated.Config{
 				Resolvers: resolver,
 			}),
 	)
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
-	if err != nil {
-		logger.Error("failed initialise Db driver", zap.Error(err))
-		return nil, ErrFailedTOOpenDB
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+conf.MigrationsPath,
-		"sqlite3", driver)
-	if err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			logger.Info("no migration to run")
-		} else {
-			logger.Error("failed initialise migration", zap.Error(err))
-			return nil, ErrFailedTORunMigration
-		}
-	}
-
-	err = m.Up()
-	if err != migrate.ErrNoChange && err != nil {
-		logger.Error("failed to run migration", zap.Error(err))
-		return nil, ErrFailedTORunMigration
-	}
 	server := &http.Server{
 		Addr:    conf.Port,
 		Handler: newRouter(srv),
@@ -140,7 +115,7 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 		Conf:   conf,
 		Logger: logger,
 		Server: server,
-		DB:     db,
+		DB:     pool,
 	}, nil
 }
 

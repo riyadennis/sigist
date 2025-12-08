@@ -1,46 +1,46 @@
 package graph
 
 import (
-	"database/sql"
+	"context"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riyadennis/event-management/graphql-service/graph/model"
 )
 
 var (
-	querySaveUser           = `INSERT INTO user_feedback (id, first_name, last_name, email, job_title, feedback,created_at) VALUES (?, ?, ?, ?, ?, ?,?)`
-	queryGetUserByID        = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE id = ?`
-	queryGetUserByEmail     = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE email = ?`
-	queryGetUserByFirstName = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE first_name = ?`
+	querySaveUser           = `INSERT INTO user_feedback (id,first_name,last_name, email,job_title,feedback) VALUES ($1, $2, $3, $4, $5, $6)`
+	queryGetUserByID        = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE id = $1`
+	queryGetUserByEmail     = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE email = $1`
+	queryGetUserByFirstName = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback WHERE first_name = $1`
 	queryGetAllUsers        = `SELECT id, first_name, last_name, email, job_title, feedback, created_at FROM user_feedback`
 )
 
-func saveUserFeedback(db *sql.DB, input model.UserFeedbackInput, uuid, createdAt string) (sql.Result, error) {
-	stmt, err := db.Prepare(querySaveUser)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	return stmt.Exec(
+func saveUserFeedback(ctx context.Context, pool *pgxpool.Pool, input model.UserFeedbackInput, uuid string) (int, error) {
+	stmt, err := pool.Exec(
+		ctx,
+		querySaveUser,
 		uuid,
 		input.FirstName,
 		input.LastName,
 		input.Email,
 		input.JobTitle,
-		input.Feedback,
-		createdAt,
-	)
+		input.Feedback)
+	if err != nil {
+		return 0, err
+	}
+	return int(stmt.RowsAffected()), nil
 }
 
-func getUserRows(db *sql.DB, filter model.FilterInput) (*sql.Rows, error) {
+func getUserRows(ctx context.Context, pool *pgxpool.Pool, filter model.FilterInput) (pgx.Rows, error) {
 	switch {
 	case filter.ID != nil:
-		return db.Query(queryGetUserByID, *filter.ID)
+		return pool.Query(ctx, queryGetUserByID, *filter.ID)
 	case filter.Email != nil:
-		return db.Query(queryGetUserByEmail, filter.Email)
+		return pool.Query(ctx, queryGetUserByEmail, filter.Email)
 	case filter.FirstName != nil:
-		return db.Query(queryGetUserByFirstName, filter.FirstName)
+		return pool.Query(ctx, queryGetUserByFirstName, filter.FirstName)
 	default:
-		return db.Query(queryGetAllUsers)
+		return pool.Query(ctx, queryGetAllUsers)
 	}
 }
