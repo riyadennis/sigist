@@ -123,9 +123,18 @@ services:
       - LOG_LEVEL=debug
       - PORT=:8080
       - ENVIRONMENT=dev
-      - DB_FILE=email.sqlite
+      - DB_USER=username
+      - DB_PASSWORD=password
+      - DB_NAME=users
+      - DB_HOST=postgres_db
+#      Since the containers are communicating locally port is 5432
+      - DB_PORT=5432
     networks:
       datapipe:
+    depends_on:
+      - postgres_db
+    links:
+      - postgres_db
     volumes:
       - "./db/email.sqlite:/email.sqlite"
   benthos:

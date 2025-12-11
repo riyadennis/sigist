@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"net"
 	"net/http"
@@ -12,8 +11,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riyadennis/event-management/foundation"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 
@@ -35,14 +34,11 @@ var (
 	// ErrFailedToStartServer means that the server couldn't be started
 	ErrFailedToStartServer = errors.New("failed to start server")
 
-	// ErrFailedTOOpenDB means that the db couldn't be opened
-	ErrFailedTOOpenDB = errors.New("failed to open db")
+	// ErrFailedTOOpenDB means that the pool couldn't be opened
+	ErrFailedTOOpenDB = errors.New("failed to open pool")
 
 	// ErrFailedTORunMigration means that the migration couldn't be run
 	ErrFailedTORunMigration = errors.New("failed to run migration")
-
-	// ErrFailedToCreateKafkaProducer means that the kafka producer couldn't be created
-	ErrFailedToCreateKafkaProducer = errors.New("failed to create kafka producer")
 )
 
 // HTTPServer encapsulates two http server operations  that we need to execute in the service
@@ -59,59 +55,43 @@ type Service struct {
 	Logger  *otelzap.Logger
 	Sigint  chan os.Signal
 	errChan chan error
-	DB      *sql.DB
+	Pool    *pgxpool.Pool
 }
 
 // NewService creates a new service
-func NewService(conf internal.Config) (*Service, error) {
+func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	log, err := logger(conf.Env)
 	if err != nil {
 		return nil, err
 	}
 
 	logger := otelzap.New(log)
-	pool, err := foundation.
-	conn, err := SetUpDB(conf.DBFile, conf.MigrationsPath)
+	dbConf, err := foundation.NewConfig()
 	if err != nil {
-		logger.Error("failed to open conn connection", zap.Error(err))
+		logger.Error("failed to initialise pool connection", zap.Error(err))
 		return nil, ErrFailedTOOpenDB
+	}
+	pool, err := foundation.SetUpPostgresDB(ctx, dbConf)
+	if err != nil {
+		logger.Error("failed to open pool connection", zap.Error(err))
+		return nil, ErrFailedTOOpenDB
+	}
+	err = foundation.RunMigration(logger, dbConf)
+	if err != nil {
+		logger.Error("failed to run migration", zap.Error(err))
+		return nil, ErrFailedTORunMigration
 	}
 	server := &http.Server{
 		Addr:    conf.Port,
-		Handler: newRouter(conn, logger),
+		Handler: newRouter(pool, logger),
 	}
 
 	return &Service{
 		Conf:   conf,
 		Logger: logger,
 		Server: server,
-		DB:     conn,
+		Pool:   pool,
 	}, nil
-}
-
-func SetUpDB(dbFile, migrationsPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbFile)
-	if err != nil {
-		return nil, err
-	}
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+migrationsPath,
-		"sqlite3", driver)
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, ErrFailedTORunMigration
-	}
-
-	err = m.Up()
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return nil, ErrFailedTORunMigration
-	}
-
-	return db, nil
 }
 
 // Start the service will kick-start http server, kafka and other needed processes.
@@ -155,7 +135,7 @@ func (s *Service) ShutDown(ctx context.Context) error {
 	case <-s.Sigint:
 		close(s.errChan)
 		s.gracefulShutdown(ctx)
-		s.DB.Close()
+		s.Pool.Close()
 		return nil
 	}
 
@@ -165,15 +145,17 @@ func (s *Service) ShutDown(ctx context.Context) error {
 // gracefulShutdown gracefully shutdown the service and its dependencies
 func (s *Service) gracefulShutdown(ctx context.Context) {
 	cancelCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+
 	defer func() {
 		_ = s.Logger.Sync()
+		s.Pool.Close()
 		cancel()
 	}()
 
 	_ = s.Server.Shutdown(cancelCtx)
 }
 
-func newRouter(db *sql.DB, logger *otelzap.Logger) http.Handler {
+func newRouter(pool *pgxpool.Pool, logger *otelzap.Logger) http.Handler {
 	chiRouter := chi.NewRouter()
 
 	chiRouter.Use(middleware.RequestID)
@@ -181,7 +163,7 @@ func newRouter(db *sql.DB, logger *otelzap.Logger) http.Handler {
 	chiRouter.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 	}))
-	eh := NewEmailHandler(db, logger)
+	eh := NewEmailHandler(pool, logger)
 	chiRouter.MethodFunc(http.MethodPost, "/email", eh.SaveEmail)
 	chiRouter.MethodFunc(http.MethodGet, "/emails", eh.GetAllEmails)
 	return chiRouter
