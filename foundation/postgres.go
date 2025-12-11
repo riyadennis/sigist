@@ -25,12 +25,12 @@ var (
 )
 
 type Config struct {
-	Host           string `arg:"env:DB_HOST" default:"localhost"`
-	User           string `arg:"env:DB_USER" default:"username"`
-	Password       string `arg:"env:DB_PASSWORD" default:"password"`
-	Name           string `arg:"env:DB_NAME" default:"feedback"`
-	Port           string `arg:"env:DB_PORT" default:"5434"`
-	MigrationsPath string `arg:"env:MIGRATIONS_PATH" default:"migrations"`
+	Host           string `arg:"env:DB_HOST" validate:"required,notblank"`
+	User           string `arg:"env:DB_USER" validate:"required,notblank"`
+	Password       string `arg:"env:DB_PASSWORD" validate:"required,notblank"`
+	Name           string `arg:"env:DB_NAME" validate:"required,notblank"`
+	Port           string `arg:"env:DB_PORT" validate:"required,notblank"`
+	MigrationsPath string `arg:"env:MIGRATIONS_PATH" validate:"required,notblank"`
 }
 
 func NewConfig() (Config, error) {

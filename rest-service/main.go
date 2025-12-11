@@ -11,12 +11,15 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	config, err := internal.NewConfig()
 	if err != nil {
 		log.Fatalf("failed to load config: %s", err)
 	}
 
-	server, err := service.NewService(config)
+	server, err := service.NewService(ctx, config)
 	if err != nil {
 		log.Fatal("failed to initialise the service", err)
 	}
@@ -25,9 +28,6 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to start service", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	err = server.ShutDown(ctx)
 	if err != nil {

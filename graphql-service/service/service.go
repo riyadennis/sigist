@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riyadennis/event-management/foundation"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/zap"
@@ -69,16 +70,22 @@ func NewService(ctx context.Context, conf internal.Config) (*Service, error) {
 	}
 
 	logger := otelzap.New(log)
-	pool, err := setUpPostgresDB(ctx, conf)
+	dbConf, err := foundation.NewConfig()
 	if err != nil {
-		logger.Error("failed initialise database pool", zap.Error(err))
-		return nil, ErrFailedToOpenKafkaConnection
+		logger.Error("failed to initialise pool connection", zap.Error(err))
+		return nil, ErrFailedTOOpenDB
 	}
-	err = runMigration(logger, conf)
+	pool, err := foundation.SetUpPostgresDB(ctx, dbConf)
 	if err != nil {
-		//already logged
-		return nil, err
+		logger.Error("failed to open pool connection", zap.Error(err))
+		return nil, ErrFailedTOOpenDB
 	}
+	err = foundation.RunMigration(logger, dbConf)
+	if err != nil {
+		logger.Error("failed to run migration", zap.Error(err))
+		return nil, ErrFailedTORunMigration
+	}
+	
 	rc := RetryConfig{
 		MaxAttempts:  100,
 		InitialDelay: 10 * 1 * time.Second,
